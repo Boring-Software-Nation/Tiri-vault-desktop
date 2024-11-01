@@ -1,4 +1,4 @@
-# Tiri Desktop Wallet
+# Tiri Vault Desktop
 
 An Electron application with Vue and TypeScript
 

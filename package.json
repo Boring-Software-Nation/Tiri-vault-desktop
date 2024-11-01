@@ -1,19 +1,19 @@
 {
   "name": "tiri-desktop",
   "version": "1.0.0",
-  "description": "Tiri Desktop Wallet",
+  "description": "Tiri Vault Desktop",
   "private": true,
   "main": "./out/main/index.js",
   "build": {
-    "productName": "TiriDW",
+    "productName": "TiriVD",
     "asar": true,
     "win": {
       "icon": "./build/icon.png",
-      "artifactName": "TiriDW Setup.${ext}"
+      "artifactName": "TiriVD Setup.${ext}"
     },
     "mac": {
       "icon": "./build/icon.png",
-      "artifactName": "TiriDW.${ext}"
+      "artifactName": "TiriVD.${ext}"
     }
   },
   "scripts": {
