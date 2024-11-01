@@ -1,4 +1,4 @@
-# dw-front
+# Tiri Desktop Wallet
 
 An Electron application with Vue and TypeScript
 
