@@ -205,6 +205,7 @@ import Wallet from "~/types/wallet";
 import {useWalletsStore} from "~/store/wallet";
 import {getLastWalletAddresses} from '~/store/db';
 import SelectWalletModal from "~/components/wallet/modals/SelectWalletModal.vue";
+import SendSiacoinModal from './modals/SendSiacoinModal.vue';
 import {CONFIG} from "~/env";
 
 import {useUserStore} from "~/store/user";

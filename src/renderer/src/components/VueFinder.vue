@@ -45,12 +45,10 @@ import {storeToRefs} from "pinia";
 import {useUserStore} from "~/store/user";
 import {loginOrRegisterUser} from "~/services/backend";
 //import { onMessage, sendMessage } from "webext-bridge/popup";
+import { onMessage, sendMessage } from '~/hat-sh/';
 import { CHUNK_SIZE, crypto_secretstream_xchacha20poly1305_ABYTES } from "~/hat-sh-config/constants";
 import {encodeArrayBufferToUrlSafeBase64} from "~/utils/base64";
 import {formatName} from "~/utils/formatName";
-
-const onMessage = () => {};
-const sendMessage = () => {};
 
 const store = useWalletsStore();
 const { currentWallet, getCurrentWalletId } = storeToRefs(store)
@@ -489,10 +487,12 @@ onMessage('hat-sh-response-dec', async (message) => {
   const {data, sender} = message;
 
   if (!Array.isArray(data)) {
-    console.error('unexpected data', data);
+    console.error('unexpected data', data, message);
+    return;
   }
 
   const action = data[0];
+  console.log('VueFinder - onMessage:', action, data);
 
   let params = [];
 

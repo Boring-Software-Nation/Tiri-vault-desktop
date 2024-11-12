@@ -63,6 +63,7 @@
     "electron-vite": "^2.3.0",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.26.0",
+    "libsodium-wrappers-sumo": "^0.7.15",
     "mitt": "^3.0.1",
     "pinia": "^2.2.4",
     "plupload": "^2.3.9",

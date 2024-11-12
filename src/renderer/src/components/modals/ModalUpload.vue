@@ -144,13 +144,11 @@ import {userStorage, useUserStore} from "~/store/user";
 import getCurrentDir from "~/utils/getCurrentDir";
 import {storeToRefs} from "pinia";
 //import { onMessage, sendMessage } from "webext-bridge/popup";
+import { onMessage, sendMessage } from '~/hat-sh/';
 import {CHUNK_SIZE} from "~/hat-sh-config/constants";
 import {encodeArrayBufferToUrlSafeBase64} from "~/utils/base64";
 import {formatFilename} from "~/utils/formatFilename";
 import {subscriptionUsageEvent} from "~/services/backend";
-
-const onMessage = () => {};
-const sendMessage = () => {};
 
 const userStore = useUserStore();
 const { loadUsage, loadSubscriptions } = userStore;
@@ -299,10 +297,12 @@ onMessage('hat-sh-response', async (message) => {
   const {data, sender} = message;
 
   if (!Array.isArray(data)) {
-    console.error('unexpected data', data);
+    console.error('unexpected message', message);
+    return;
   }
 
   const action = data[0];
+  console.log('ModalUpload - onMessage:', action, data);
 
   let params = [], idx;
 

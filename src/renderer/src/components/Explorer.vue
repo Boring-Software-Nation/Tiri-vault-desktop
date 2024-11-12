@@ -340,7 +340,7 @@ export default {
 </script>
 
 <script setup>
-import {inject, nextTick, onMounted, onUpdated, reactive, ref, watch} from 'vue';
+import {inject, nextTick, onMounted, onUpdated, reactive, ref, unref, watch} from 'vue';
 import DragSelect from 'dragselect';
 import filesize from './../utils/filesize.js'
 import datetimestring from '../utils/datetimestring.js';
@@ -418,7 +418,6 @@ const clearTimeOut = () => {
 // on ios devices scrollbars are hidden as system level.
 // to be able to scroll, 2 finger tap needed.
 // this is the easiest way that I can think of.
-/*
 const dragAndDrop = ref(true);
 const handleTouchStart = (event) => {
   if (event.touches.length > 1) {
@@ -433,7 +432,6 @@ const handleTouchStart = (event) => {
     dragAndDrop.value = !dragAndDrop.value;
   }
 };
-*/
 
 const delayedOpenItem = ($event) => {
   touchTimeOut = setTimeout(() =>  {
@@ -500,7 +498,7 @@ const sortBy = (column) => {
   }
 };
 
-const getSelectedItems = () => /*ds.value ? ds.value.getSelection().map((el) => JSON.parse(el.dataset.item)) :*/ [];
+const getSelectedItems = () => ds.value ? ds.value.getSelection().map((el) => JSON.parse(el.dataset.item)) : [];
 
 const handleDragStart = (e, item) => {
   if (e.altKey || e.ctrlKey || e.metaKey) {
@@ -566,7 +564,6 @@ const handleMouseLeave = (e, item) => {
   item.hover = false;
 };
 
-/*
 const setDragSelect = () => {
   ds.value = new DragSelect({
     area: selectorArea.value,
@@ -577,7 +574,7 @@ const setDragSelect = () => {
 
   emitter.on('vf-explorer-update', () => nextTick(() => {
     ds.value.clearSelection();
-    ds.value.setSelectables(document.getElementsByClassName('vf-item-' + randId ));
+    ds.value.setSettings({ selectables: document.getElementsByClassName('vf-item-' + randId ) });
   }));
 
   ds.value.subscribe('predragstart', ({event, isDragging}) => {
@@ -625,7 +622,6 @@ const setDragSelect = () => {
 const hideFileInfo = () => {
   ds.value.clearSelection(true);
 };
-*/
 
 const getSelectedItemFilename = () => {
   if (getSelectedItems().length === 1) {
@@ -665,7 +661,6 @@ emitter.on('vf-fetch', ({params, onSuccess = null, onError = null}) => {
   }
 })
 
-/*
 onMounted(setDragSelect)
 
 onUpdated(() => {
@@ -673,7 +668,6 @@ onUpdated(() => {
   ds.value.SelectorArea.updatePos();
   vfLazyLoad.update();
 })
-*/
 
 onMounted(() => {
   watch(() => props.view, () => emitter.emit('vf-explorer-update'));
