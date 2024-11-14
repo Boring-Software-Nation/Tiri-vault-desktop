@@ -7,6 +7,7 @@ async function spawnWorker(params, timeout, progress) {
 		}, timeout);
 
 		worker.onmessage = (e) => {
+			//console.log('!!! sia worker message', e.data);
 			const data = e.data;
 
 			clearTimeout(workerDeadline);

@@ -16,6 +16,17 @@ export default defineConfig({
         '~': resolve('src/renderer/src')
       }
     },
-    plugins: [vue()]
+    plugins: [vue()],
+    build: {
+      rollupOptions: {
+        input: {
+          main: resolve(__dirname, 'src/renderer/index.html'),
+          "hat-sh-worker": resolve(__dirname, 'src/renderer/hat-sh-worker.js')
+        },
+        output: {
+          entryFileNames: `[name].js`  // Keeps output files easy to locate
+        }
+      }
+    }
   }
 })

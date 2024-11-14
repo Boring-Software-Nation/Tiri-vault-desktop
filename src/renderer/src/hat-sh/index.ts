@@ -5,10 +5,10 @@ let loading = false;
 if ('serviceWorker' in navigator && !loading) {
   loading = true;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register(new URL('/hat-sh-worker.js', import.meta.url), { type: 'module' }).then(registration => {
-      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+    navigator.serviceWorker.register('/hat-sh-worker.js', { type: 'module' }).then(registration => {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
     }).catch(error => {
-      console.log('ServiceWorker registration failed: ', error);
+      console.error('ServiceWorker registration failed: ', error);
       throw error;
     });
   });

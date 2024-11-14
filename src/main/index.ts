@@ -4,10 +4,23 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import fs from 'fs';
 import Store from 'electron-store';
+import express from 'express';
+
+const PORT = 5174;
+
+if (!(is.dev && process.env['ELECTRON_RENDERER_URL'])) {
+  const server = express();
+  const dir = join(__dirname, '../renderer');
+  //console.log('Serving static files from', dir);
+  server.use(express.static(dir));
+  server.listen(PORT);
+}
 
 type StoreType = {
   syncDirectory?: string
 };
+
+// is.dev = true; // FIXME: don't forget to remove this line for release build
 
 const FILE_CHUNK_SIZE = 4096;
 
@@ -45,7 +58,8 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    //mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadURL(`http://localhost:${PORT}/index.html`)
   }
 }
 
