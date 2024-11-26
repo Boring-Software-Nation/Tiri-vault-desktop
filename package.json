@@ -34,7 +34,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "tree-model": "^1.0.7"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",

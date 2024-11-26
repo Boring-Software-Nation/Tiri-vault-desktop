@@ -87,6 +87,22 @@ window.electron.ipcRenderer.on('chunkWritten', (event, fd, bytes, eof) => {
   writeQueuedChunk();
 })
 
+window.electron.ipcRenderer.on('addMessage', (event, message) => {
+  state.messages.push(message);
+});
+
+window.electron.ipcRenderer.on('replaceMessage', (event, message, oldMessage) => {
+  if (state.messages[state.messages.length - 1] === oldMessage) {
+    state.messages[state.messages.length - 1] = message;
+  } else {
+    state.messages.push(message);
+  }
+});
+
+window.electron.ipcRenderer.on('filetree', (event, filetree) => {
+  console.log('Filetree:', filetree);
+  //state.messages.push(`Filetree: ${JSON.stringify(filetree)}`);
+})
 </script>
 
 <template>

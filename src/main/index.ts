@@ -5,13 +5,15 @@ import icon from '../../resources/icon.png?asset'
 import fs from 'fs';
 import Store from 'electron-store';
 import express from 'express';
+import { log, sendMessage } from './common';
+import { getTree, isFileTreeReady, readDirectory } from './filetree';
 
 const PORT = 5174;
 
 if (!(is.dev && process.env['ELECTRON_RENDERER_URL'])) {
   const server = express();
   const dir = join(__dirname, '../renderer');
-  //console.log('Serving static files from', dir);
+  //log('Serving static files from', dir);
   server.use(express.static(dir));
   server.listen(PORT);
 }
@@ -80,7 +82,7 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('chooseDirectory', () => chooseDirectory())
   ipcMain.on('openDirectory', () => openDirectory())
-  ipcMain.on('getDirectory', () => BrowserWindow.getAllWindows()[0].webContents.send('directorySelected', directory));
+  ipcMain.on('getDirectory', () => getDirectory());
   ipcMain.on('readFile', (event, fileName) => readFile(fileName))
   ipcMain.on('readNextChunk', (event, fd) => readNextChunk(fd))
   ipcMain.on('writeFile', (event, fileName, buffer, bytes, eof) => writeFile(fileName, buffer, bytes, eof))
@@ -107,6 +109,16 @@ app.on('window-all-closed', () => {
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
 
+function getDirectory() {
+  sendMessage('directorySelected', directory);
+  if (directory) {
+    if (isFileTreeReady())
+      sendMessage('filetree', getTree()?.model)
+    else
+      readDirectory(directory);
+  }
+}
+
 function chooseDirectory() {
   dialog
     .showOpenDialog({
@@ -118,7 +130,8 @@ function chooseDirectory() {
       }
       directory = result.filePaths[0];
       store.set('syncDirectory', directory);
-      BrowserWindow.getAllWindows()[0].webContents.send('directorySelected', result.filePaths[0]);
+      sendMessage('directorySelected', result.filePaths[0]);
+      readDirectory(directory);
     })
 }
 
@@ -130,18 +143,18 @@ function readFile(fileName: string) {
   fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
   fs.open(directory + '/' + fileName, 'r', (err: any, fd: any) => {
     if (err) {
-      BrowserWindow.getAllWindows()[0].webContents.send('chunkRead', null);
+      sendMessage('chunkRead', null);
       return;
     }
     const buffer = Buffer.alloc(FILE_CHUNK_SIZE);
     fs.read(fd, buffer, (err: any, bytesRead: any, buffer: any) => {
       if (err) {
-        BrowserWindow.getAllWindows()[0].webContents.send('chunkRead', null);
+        sendMessage('chunkRead', null);
         fs.close(fd, () => {});
         return;
       }
       const eof = bytesRead === 0 || bytesRead < FILE_CHUNK_SIZE;
-      BrowserWindow.getAllWindows()[0].webContents.send('chunkRead', fd, buffer, bytesRead, eof);
+      sendMessage('chunkRead', fd, buffer, bytesRead, eof);
       if (eof) {
         fs.close(fd, () => {});
       }
@@ -153,12 +166,12 @@ function readNextChunk(fd: any) {
   const buffer = Buffer.alloc(FILE_CHUNK_SIZE);
   fs.read(fd, buffer, (err: any, bytesRead: any, buffer: any) => {
     if (err) {
-      BrowserWindow.getAllWindows()[0].webContents.send('chunkRead', null);
+      sendMessage('chunkRead', null);
       fs.close(fd, () => {});
       return;
     }
     const eof = bytesRead === 0 || bytesRead < FILE_CHUNK_SIZE;
-    BrowserWindow.getAllWindows()[0].webContents.send('chunkRead', fd, buffer, bytesRead, eof);
+    sendMessage('chunkRead', fd, buffer, bytesRead, eof);
     if (eof) {
       fs.close(fd, () => {});
     }
@@ -169,34 +182,34 @@ function writeFile(fileName: string, buffer: any, bytes, eof) {
   fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
   fs.open(directory + '/' + fileName, 'w', (err: any, fd: any) => {
     if (err) {
-      BrowserWindow.getAllWindows()[0].webContents.send('chunkWritten', null);
+      sendMessage('chunkWritten', null);
       return;
     }
     fs.write(fd, buffer, 0, bytes, (err: any, written: any, buffer: any) => {
       if (err) {
-        BrowserWindow.getAllWindows()[0].webContents.send('chunkWritten', null);
+        sendMessage('chunkWritten', null);
         fs.close(fd, () => {});
         return;
       }
       if (eof) {
         fs.close(fd, () => {});
       }
-      BrowserWindow.getAllWindows()[0].webContents.send('chunkWritten', fd, written, eof);
+      sendMessage('chunkWritten', fd, written, eof);
     });
   });
 }
 
 function writeNextChunk(fd: any, buffer: any, bytes, eof) {
-  //console.log('writeNextChunk', fd, bytes, eof);
+  //log('writeNextChunk', fd, bytes, eof);
   fs.write(fd, buffer, 0, bytes, (err: any, written: any, buffer: any) => {
     if (err) {
-      BrowserWindow.getAllWindows()[0].webContents.send('chunkWritten', null);
+      sendMessage('chunkWritten', null);
       fs.close(fd, () => {});
       return;
     }
     if (eof) {
       fs.close(fd, () => {});
     }
-    BrowserWindow.getAllWindows()[0].webContents.send('chunkWritten', fd, written, eof);
+    sendMessage('chunkWritten', fd, written, eof);
   });
 }
