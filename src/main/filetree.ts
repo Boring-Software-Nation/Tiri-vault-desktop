@@ -23,16 +23,17 @@ function filetree(rootPath: string) {
     const stats = await stat(nodePath);
     if (stats.isDirectory()) {
       const children = await readdir(nodePath);
+      const p = path.relative(rootPath, nodePath);
       return {
-        name: path.basename(nodePath),
-        path: nodePath,
+        name: p ? path.basename(nodePath) : "/",
+        path: p,
         type: "directory",
         mtime: stats.mtimeMs,
         children: await Promise.all(children.map(async (child) => buildNode(path.join(nodePath, child)))),
       };
     } else {
       result.files++;
-      return { name: path.basename(nodePath), path: nodePath, type: "file", mtime: stats.mtimeMs };
+      return { name: path.basename(nodePath), path: path.relative(rootPath, nodePath), type: "file", mtime: stats.mtimeMs };
     }
   }
 
@@ -98,8 +99,8 @@ export async function readDirectory(directory: string) {
     hashTasks.push(async () => {
       files++;
       log('Reading file', node.model.path);
-      node.model.hash = await calculateFileHash(node.model.path);
-      console.log(node.model.hash);
+      node.model.hash = await calculateFileHash(path.join(directory, node.model.path));
+      log(node.model.hash);
     })
   });
 
