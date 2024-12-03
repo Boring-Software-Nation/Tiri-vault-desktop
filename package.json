@@ -1,6 +1,6 @@
 {
   "name": "tiri-desktop",
-  "version": "1.0.0",
+  "version": "0.2.1",
   "description": "Tiri Vault Desktop",
   "private": true,
   "main": "./out/main/index.js",
@@ -9,11 +9,11 @@
     "asar": true,
     "win": {
       "icon": "./build/icon.png",
-      "artifactName": "TiriVD Setup.${ext}"
+      "artifactName": "TiriVD Setup ${version}.${ext}"
     },
     "mac": {
       "icon": "./build/icon.png",
-      "artifactName": "TiriVD.${ext}"
+      "artifactName": "TiriVD ${version}.${ext}"
     }
   },
   "scripts": {
