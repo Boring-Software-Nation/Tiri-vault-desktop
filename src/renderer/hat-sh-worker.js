@@ -144,6 +144,14 @@ addEventListener("message", (e) => {
         doStreamFetch(params[0]/*url*/, params[1]/*token*/, params[2]/*fileId*/, sender);
         break;
 
+      case "encryptBuffer":
+        encryptBuffer(params[0], params[1], sender);
+        break;
+
+      case "decryptBuffer":
+        decryptBuffer(params[0], params[1], sender);
+        break;
+
       default:
         console.error("Unknown worker action", action);
     }
@@ -617,4 +625,52 @@ const decryptChunks = (chunk, last, client) => {
       client.postMessage({ reply: "wrongPassword" });
     }
   }, 500);
+};
+
+const encryptBuffer = async (data, password, client) => {
+  const salt = sodium.randombytes_buf(sodium.crypto_pwhash_SALTBYTES);
+  const key = sodium.crypto_pwhash(
+    sodium.crypto_secretstream_xchacha20poly1305_KEYBYTES,
+    password,
+    salt,
+    sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE,
+    sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+    sodium.crypto_pwhash_ALG_ARGON2ID13
+  );
+
+  const state = await sodium.crypto_secretstream_xchacha20poly1305_init_push(key);
+  const header = state.header;
+  const encrypted = await sodium.crypto_secretstream_xchacha20poly1305_push(
+    state.state,
+    data,
+    null,
+    sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL
+  );
+  client.postMessage({ id: 'hat-sh-buffer', action: "bufferEncrypted", data: { salt, header, encrypted } });
+};
+
+const decryptBuffer = async (data, password, client) => {
+  const salt = decodeUrlSafeBase64ToArrayBuffer(data.salt);
+  const header = decodeUrlSafeBase64ToArrayBuffer(data.header);
+  const encrypted = decodeUrlSafeBase64ToArrayBuffer(data.encrypted);
+  //console.log('?????', salt, header, encrypted);
+  const key = sodium.crypto_pwhash(
+    sodium.crypto_secretstream_xchacha20poly1305_KEYBYTES,
+    password,
+    salt,
+    sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE,
+    sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+    sodium.crypto_pwhash_ALG_ARGON2ID13
+  );
+
+  const state = await sodium.crypto_secretstream_xchacha20poly1305_init_pull(
+    header,
+    key
+  );
+
+  const decrypted = await sodium.crypto_secretstream_xchacha20poly1305_pull(
+    state,
+    encrypted
+  );
+  client.postMessage({ id: 'hat-sh-buffer', action: "bufferDecrypted", data: decrypted.message });
 };

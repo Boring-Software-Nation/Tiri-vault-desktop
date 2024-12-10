@@ -5,12 +5,13 @@ import { storeToRefs } from 'pinia';
 import { userStorage, useUserStore } from '~/store/user';
 import { useWalletsStore } from "~/store/wallet";
 import { loginOrRegisterUser } from "~/services/backend";
-import { encodeArrayBufferToUrlSafeBase64 } from "@renderer/utils/base64";
+import { decodeUrlSafeBase64ToArrayBuffer, encodeArrayBufferToUrlSafeBase64 } from "@renderer/utils/base64";
 import TreeModel from "tree-model";
 import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
 import { onMessage, sendMessage } from '~/hat-sh/';
 import {CHUNK_SIZE} from "~/hat-sh-config/constants";
+import { on } from "events";
 
 const walletStore = useWalletsStore();
 const { allWallets, pushNotification, getSelectedWallet } = walletStore;
@@ -200,20 +201,31 @@ const fetchRemoteTree = async () => {
     },
   });
   console.log('fetchRemoteTree response:', r);
-  let tree = {};
+  let encodedTree;
   try {
+    //const t = await r.text();
+    //console.log('Text:', t);
     const j = await r.json();
     //console.log('JSON:', j);
     const s = String.fromCodePoint(...j.data)
     //console.log('String:', s);
-    tree = JSON.parse(s);
-    //console.log('Tree:', tree);
+    encodedTree = JSON.parse(s);
+    //console.log('Encoded tree:', encodedTree);
   } catch (e) {
     console.error('No remote tree:', e);
   }
+  if (encodedTree) {
+    sendMessage('hat-sh', [ "decryptBuffer", encodedTree, JSON.stringify(user.value?.unlockPassword) ], 'background');
+  } else {
+    processTrees();
+  }
+}
+
+const onRemoteTreeDecrypted = async (decrypted) => {
+  console.log('Remote tree decrypted:', decrypted);
+  const tree = JSON.parse(decrypted);
   remoteTree.value = treeModel.parse(tree);
   console.log('Remote tree:', remoteTree.value?.model);
-
   processTrees();
 }
 
@@ -257,20 +269,37 @@ const uploadFiles = async (diff:FileTreeModel) => {
 }
 
 const onUploadFinished = () => {
-  //storeLocalTree();
+  storeLocalTree();
   state.messages.push('Synced');
 }
 
 const storeLocalTree = async () => {
+  encryptLocalTree();
+}
+
+const encryptLocalTree = async () => {
+  const tree = localTree.value?.model;
+  const treeString = JSON.stringify(tree);
+  sendMessage('hat-sh', [ "encryptBuffer", treeString, JSON.stringify(user.value?.unlockPassword) ], 'background');
+};
+
+const onLocalTreeEncrypted = async (encryptedData) => {
+  const base64data = {
+    salt: encodeArrayBufferToUrlSafeBase64(encryptedData.salt),
+    header: encodeArrayBufferToUrlSafeBase64(encryptedData.header),
+    encrypted: encodeArrayBufferToUrlSafeBase64(encryptedData.encrypted),
+  }
+  const base64body = encodeArrayBufferToUrlSafeBase64(new TextEncoder().encode(JSON.stringify(base64data)).buffer);
+  //console.log('Local tree encrypted:', base64data);
+
   const token = user.value?.token;
-  const body = encodeArrayBufferToUrlSafeBase64(new TextEncoder().encode(JSON.stringify(localTree.value)).buffer);
   const r = await fetch(`${CONFIG.API_HOST}/api/sync/tree`, {
     method: 'PUT',
     headers: {
       'Authorization': `Basic ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ tree: body }),
+    body: JSON.stringify({ tree: base64body }),
   });
   console.log('storeLocalTree response:', r);
 };
@@ -370,7 +399,7 @@ onMessage('hat-sh-response', async (message) => {
   }
 
   const action = data[0];
-  console.log('ModalUpload - onMessage:', action, data);
+  console.log('Sync - onMessage:', action, data);
 
   let params = [] as any[], idx;
 
@@ -454,6 +483,20 @@ onMessage('hat-sh-response', async (message) => {
       }
       break;
   }
+});
+
+onMessage('hat-sh-buffer', async (message) => {
+  const { action, data } = message;
+  console.log('Sync/buffer - onMessage:', action, data);
+
+  switch (action) {
+    case 'bufferEncrypted':
+      onLocalTreeEncrypted(data);
+      break;
+    case 'bufferDecrypted':
+      onRemoteTreeDecrypted(String.fromCodePoint(...data));
+      break;
+    }
 });
 
 const updateCurrFile = () => {
