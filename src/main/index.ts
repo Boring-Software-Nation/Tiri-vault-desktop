@@ -24,7 +24,7 @@ type StoreType = {
 
 // is.dev = true; // FIXME: don't forget to remove this line for release build
 
-const FILE_CHUNK_SIZE = 4096;
+const FILE_CHUNK_SIZE = 32 * 1024 * 1024;
 
 const store = new Store<StoreType>() as any; // store typed as any to avoid TS error
 
@@ -83,8 +83,8 @@ app.whenReady().then(() => {
   ipcMain.on('chooseDirectory', () => chooseDirectory())
   ipcMain.on('openDirectory', () => openDirectory())
   ipcMain.on('getDirectory', () => getDirectory());
-  ipcMain.on('readFile', (event, fileName) => readFile(fileName))
-  ipcMain.on('readNextChunk', (event, fd) => readNextChunk(fd))
+  ipcMain.on('readFile', (event, id, fileName) => readFile(id, fileName))
+  ipcMain.on('readNextChunk', (event, id, fd) => readNextChunk(id, fd))
   ipcMain.on('writeFile', (event, fileName, buffer, bytes, eof) => writeFile(fileName, buffer, bytes, eof))
   ipcMain.on('writeNextChunk', (event, fd, buffer, bytes, eof) => writeNextChunk(fd, buffer, bytes, eof))
 
@@ -139,22 +139,22 @@ function openDirectory() {
   shell.openPath(directory);
 }
 
-function readFile(fileName: string) {
+function readFile(id: any, fileName: string) {
   fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
   fs.open(directory + '/' + fileName, 'r', (err: any, fd: any) => {
     if (err) {
-      sendMessage('chunkRead', null);
+      sendMessage('chunkRead', id, null);
       return;
     }
     const buffer = Buffer.alloc(FILE_CHUNK_SIZE);
     fs.read(fd, buffer, (err: any, bytesRead: any, buffer: any) => {
       if (err) {
-        sendMessage('chunkRead', null);
+        sendMessage('chunkRead', id, null);
         fs.close(fd, () => {});
         return;
       }
       const eof = bytesRead === 0 || bytesRead < FILE_CHUNK_SIZE;
-      sendMessage('chunkRead', fd, buffer, bytesRead, eof);
+      sendMessage('chunkRead', id, fd, buffer, bytesRead, eof);
       if (eof) {
         fs.close(fd, () => {});
       }
@@ -162,16 +162,16 @@ function readFile(fileName: string) {
   });
 }
 
-function readNextChunk(fd: any) {
+function readNextChunk(id: any, fd: any) {
   const buffer = Buffer.alloc(FILE_CHUNK_SIZE);
   fs.read(fd, buffer, (err: any, bytesRead: any, buffer: any) => {
     if (err) {
-      sendMessage('chunkRead', null);
+      sendMessage('chunkRead', id, null);
       fs.close(fd, () => {});
       return;
     }
     const eof = bytesRead === 0 || bytesRead < FILE_CHUNK_SIZE;
-    sendMessage('chunkRead', fd, buffer, bytesRead, eof);
+    sendMessage('chunkRead', id, fd, buffer, bytesRead, eof);
     if (eof) {
       fs.close(fd, () => {});
     }

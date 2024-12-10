@@ -213,7 +213,7 @@ const doStreamFetch = async (url, token, fileId, client) => {
     console.log('doStreamFetch response', r)
     if (r.status === 403) {
       console.warn('Limit exceeded')
-      streamController?.close();
+      try { streamController?.close(); } catch (e) {}
       streamController = null;
       await sendMessage(
           'hat-sh-response',
@@ -222,7 +222,7 @@ const doStreamFetch = async (url, token, fileId, client) => {
       );
       return;
     } else if (r.status === 500 || r.status === 503) {
-      streamController?.close();
+      try { streamController?.close(); } catch (e) {}
       streamController = null;
       await sendMessage(
           'hat-sh-response',
@@ -239,7 +239,7 @@ const doStreamFetch = async (url, token, fileId, client) => {
     );
   } catch (e) {
     console.error(e)
-    streamController?.close();
+    try { streamController?.close(); } catch (e) {}
     streamController = null;
     await sendMessage(
         'hat-sh-response',

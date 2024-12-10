@@ -2,7 +2,11 @@
   <primary-nav />
   <div class="page-wrapper">
     <unavailable-page v-if="typeof unavailable === 'string'" />
-    <router-view v-if="setup && unlocked" />
+    <router-view v-if="setup && unlocked" v-slot="{ Component }">
+      <keep-alive include="Sync">
+        <component :is="Component" />
+      </keep-alive>
+    </router-view>
     <setup-page v-else-if="!setup" />
     <unlock-wallet v-else-if="!isAuthorized" />
   </div>

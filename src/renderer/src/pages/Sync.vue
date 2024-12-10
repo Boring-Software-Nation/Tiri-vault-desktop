@@ -9,11 +9,15 @@ import { encodeArrayBufferToUrlSafeBase64 } from "@renderer/utils/base64";
 import TreeModel from "tree-model";
 import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
+import { onMessage, sendMessage } from '~/hat-sh/';
+import {CHUNK_SIZE} from "~/hat-sh-config/constants";
 
 const walletStore = useWalletsStore();
 const { allWallets, pushNotification, getSelectedWallet } = walletStore;
 const { currentWallet, getCurrentWalletId } = storeToRefs(walletStore);
-const { user } = storeToRefs(useUserStore());
+const userStore = useUserStore();
+const { loadUsage, loadSubscriptions } = userStore;
+const { user } = storeToRefs(userStore);
 const selectedWallet = ref(null);
 
 type FileTreeNode = {
@@ -30,6 +34,22 @@ const treeModel = new TreeModel();
 
 const localTree = shallowRef<FileTreeModel>(null);
 const remoteTree = shallowRef<FileTreeModel>(null);
+
+type QuueItem = {
+  id: number,
+  file: FileTreeNode,
+  fd?: number,
+  status?: 'encrypting'|'encrypted'|'uploaded',
+}
+
+const queue = ref<QuueItem[]>([]);
+const currFile = ref(0);
+let numberOfFiles: number;
+//const encryptionMethodState = "secretKey";
+let privateKey: any, publicKey: any; // not used in current implementation
+
+const ipcSend = (channel, ...args) => window.electron.ipcRenderer.send(channel, ...args);
+const ipcOn = (channel, listener) => window.electron.ipcRenderer.on(channel, listener);
 
 onMounted(() => {
   selectedWallet.value = getSelectedWallet.value || null;
@@ -56,6 +76,7 @@ const state = reactive({
   messages: [] as string[],
 });
 
+/*
 const write = {
   writing: false,
   writeFd: null,
@@ -75,34 +96,44 @@ const writeQueuedChunk = () => {
     }
   }
 }
+*/
 
-const chooseDirectory = () => window.electron.ipcRenderer.send('chooseDirectory')
-const openDirectory = () => window.electron.ipcRenderer.send('openDirectory')
-const readFile = () => {
-  if (write.writing) {
-    state.messages.push("Writing in progress, please wait");
-    return;
-  }
-  write.writeFd = null;
-  write.writeQueue = [] as { chunk: Buffer, bytes: number, eof: boolean }[];
-  state.messages = [] as string[];
-  window.electron.ipcRenderer.send('readFile', '1.dat')
-}
-const readNextChunk = (fd) => window.electron.ipcRenderer.send('readNextChunk', fd)
+const chooseDirectory = () => ipcSend('chooseDirectory')
+const openDirectory = () => ipcSend('openDirectory')
 
-window.electron.ipcRenderer.on('directorySelected', (event, result) => {
+ipcOn('directorySelected', (event, result) => {
   state.directory = result;
 })
+ipcSend('getDirectory');
 
-window.electron.ipcRenderer.send('getDirectory');
 
-window.electron.ipcRenderer.on('chunkRead', (event, fd, chunk, bytesRead, eof) => {
-  console.log('Chunk read:', fd, chunk, bytesRead, eof);
+const chunkWaiters = new Map();
+
+const requestFileRead = async (id: number, path: string) => {
+  return new Promise((resolve, reject) => {
+    chunkWaiters.set(id, {resolve, reject});
+    ipcSend('readFile', id, path);
+  });
+}
+const requestNextChunk = (id: number, fd: any) => {
+  return new Promise((resolve, reject) => {
+    chunkWaiters.set(id, {resolve, reject});
+    ipcSend('readNextChunk', id, fd);
+  });
+}
+
+ipcOn('chunkRead', (event, id, fd, chunk, bytesRead, eof) => {
+  const {resolve, reject} = chunkWaiters.get(id);
+
+  console.log('Chunk read:', id, fd, chunk, bytesRead, eof);
   if(!fd) {
-    state.messages.push("No file descriptor");
-    return;
+    return reject('No file descriptor');
   }
-  state.messages.push(`Read: ${bytesRead}`);
+  console.log(`Read: ${bytesRead}`);
+  resolve({ fd, chunk, bytesRead, eof });
+});
+
+/*
   if (write.writing) {
     write.writeQueue.push({ chunk, bytes: bytesRead, eof });
     state.messages.push(`Queued to write, queue length: ${write.writeQueue.length}`);
@@ -117,8 +148,9 @@ window.electron.ipcRenderer.on('chunkRead', (event, fd, chunk, bytesRead, eof) =
   if (!eof) {
     readNextChunk(fd);
   }
-})
+*/
 
+/*
 window.electron.ipcRenderer.on('chunkWritten', (event, fd, bytes, eof) => {
   console.log('Chunk written:', fd, bytes, eof);
   if (!fd) {
@@ -136,12 +168,12 @@ window.electron.ipcRenderer.on('chunkWritten', (event, fd, bytes, eof) => {
   state.messages.push(`Written: ${bytes}`);
   writeQueuedChunk();
 })
+*/
 
-window.electron.ipcRenderer.on('addMessage', (event, message) => {
+ipcOn('addMessage', (event, message) => {
   state.messages.push(message);
 });
-
-window.electron.ipcRenderer.on('replaceMessage', (event, message, oldMessage) => {
+ipcOn('replaceMessage', (event, message, oldMessage) => {
   if (state.messages[state.messages.length - 1] === oldMessage) {
     state.messages[state.messages.length - 1] = message;
   } else {
@@ -149,7 +181,7 @@ window.electron.ipcRenderer.on('replaceMessage', (event, message, oldMessage) =>
   }
 });
 
-window.electron.ipcRenderer.on('filetree', async (event, filetree) => {
+ipcOn('filetree', async (event, filetree) => {
   //console.log('Filetree:', filetree);
   localTree.value = treeModel.parse(filetree);
   console.log('Local tree:', localTree.value?.model);
@@ -189,9 +221,7 @@ const processTrees = async () => {
   const uploadDiff = getTreeDiff(localTree.value, remoteTree.value);
   console.log('Upload diff:', uploadDiff);
   state.messages.push('Syncing...');
-  await uploadFiles(uploadDiff);
-  //storeLocalTree();
-  state.messages.push('Synced');
+  uploadFiles(uploadDiff);
 }
 
 const getTreeDiff = (tree1:FileTreeModel, tree2:FileTreeModel) => {
@@ -205,17 +235,30 @@ const uploadFiles = async (diff:FileTreeModel) => {
   }
   await createFolder('/', '.sync');
 
+  numberOfFiles = 0;
+  queue.value = [];
   diff?.walk((node) => {
-    if (node.model.type === 'directory') {
+    if (node.model.type === 'directory' && node.model.path) {
       console.log('Dir:', node.model);
       createFolder('/.sync', node.model.path);
       state.messages.push(`Folder: ${node.model.path}`);
     } else if (node.model.type === 'file') {
       console.log('File:', node.model);
-      state.messages.push(`Uploading file: ${node.model.path}`);
+      state.messages.push(`Staging file for upload: ${node.model.path}`);
+      numberOfFiles++;
+      queue.value.push({id: queue.value.length+1, file: node.model});
     }
     return true;
   });
+  if (numberOfFiles > 0) {
+    currFile.value = 0;
+    prepareFile();
+  }
+}
+
+const onUploadFinished = () => {
+  //storeLocalTree();
+  state.messages.push('Synced');
 }
 
 const storeLocalTree = async () => {
@@ -318,6 +361,194 @@ const createFolder = async (path, name) => {
   return data;
 };
 
+onMessage('hat-sh-response', async (message) => {
+  const {data, sender} = message;
+
+  if (!Array.isArray(data)) {
+    console.error('unexpected message', message);
+    return;
+  }
+
+  const action = data[0];
+  console.log('ModalUpload - onMessage:', action, data);
+
+  let params = [] as any[], idx;
+
+  if (data.length > 1)
+    params = data.slice(1);
+
+  switch (action) {
+    case 'keysGenerated':
+      startEncryption("secretKey");
+      break;
+
+    case "keyPairReady":
+      startEncryption("publicKey");
+      break;
+
+    case "filePreparedEnc":
+      console.log("filePreparedEnc")
+      kickOffEncryption();
+      break;
+
+    case "continueEncryption":
+      continueEncryption();
+      break;
+
+    case "encryptionFinished":
+      idx = queue.value.findIndex((item) => item.id === params[0])
+      if (idx !== -1) {
+        queue.value[idx].status = 'encrypted';
+
+        currFile.value += 1;
+        if (currFile.value < numberOfFiles) {
+          setTimeout(function () {
+              prepareFile();
+            }, 1000);
+        }
+      }
+      break;
+    case "uploadingFinished":
+      console.log('uploadingFinished (Sync)')
+      idx = queue.value.findIndex((item) => item.id === params[0]);
+      if (idx !== -1) {
+        const item = queue.value[idx];
+        console.log('File uploaded:', item.file.path);
+        state.messages.push(`File uploaded: ${item.file.path}`);
+        if (currFile.value >= numberOfFiles) {
+          onUploadFinished();
+        }
+      }
+      setTimeout(()=> {
+        loadUsage(getCurrentWalletId.value)
+        loadSubscriptions(getCurrentWalletId.value)
+      }, 3000)
+
+      break;
+    case "limitExceeded":
+    case "uploadError":
+      //emitter.emit('vf-modal-close');
+      //emitter.emit('vf-toast-push', {label: params[1]});
+
+      const queueIdx = queue.value.findIndex((item) => item.id === params[0]);
+      if (queueIdx !== -1) {
+        const item = queue.value[queueIdx];
+        console.log('Error uploading file:', item.file.path, params[1]);
+        state.messages.push(`Error uploading file: ${item.file.path}: ${params[1]}`);
+        /*const currentDir = getCurrentDir(props.currentWalletId, props.current.dirname);
+
+        emitter.emit('vf-fetch', {
+          params:
+              {
+                q: 'index',
+                adapter: props.current.adapter,
+                path: props.current.dirname,
+                uploadingWalletId: props.currentWalletId,
+                uploadingCurrentDir: currentDir,
+                uploadingFilename: queue.value[queueIdx].name,
+                status: action
+              }
+        });*/
+
+        //queue.value.splice(queueIdx, 1);
+      }
+      break;
+  }
+});
+
+const updateCurrFile = () => {
+  currFile.value += 1;
+};
+
+const prepareFile = async () => {
+  // send file name to sw
+  const item = queue.value[currFile.value];
+  state.messages.push(`Uploading file: ${item.file.path}`);
+  let fileName = encodeURIComponent(item.file.name + ".enc");
+  console.trace("prepareFile")
+  await sendMessage('hat-sh', [ "prepareFileNameEnc", fileName ], 'background');
+};
+
+const startEncryption = (method) => {
+  const item = queue.value[currFile.value];
+  requestFileRead(item.id, item.file.path)
+      .then(async (value) => {
+        const { fd, chunk, bytesRead, eof } = value as { fd: any; chunk: ArrayBuffer; bytesRead: number; eof: boolean };
+        item.fd = fd;
+
+        const chunkString = encodeArrayBufferToUrlSafeBase64(chunk.slice(0, bytesRead));
+
+        if (method === "secretKey") {
+          await sendMessage('hat-sh', [ "encryptFirstChunk", chunkString, eof, item.id ], 'background');
+        }
+        if (method === "publicKey") {
+          await sendMessage('hat-sh', [ "asymmetricEncryptFirstChunk", chunkString, eof, item.id ], 'background');
+        }
+      });
+
+};
+
+const kickOffEncryption = async () => {
+  if (currFile.value <= numberOfFiles - 1) {
+    //file = files.value[currFile.value];
+    const item = queue.value[currFile.value];
+
+    //queue.value[queue.value.findIndex((item) => item.id === file.id)].status = 'encrypting';
+    item.status = 'encrypting';
+
+    // window.open(`file`, "_self");
+    /*
+    const currentDir = getCurrentDir(props.currentWalletId, props.current.dirname);
+
+    emitter.emit('vf-fetch', {params:
+          {
+            q: 'index',
+            adapter: props.current.adapter,
+            path: props.current.dirname,
+            uploadingWalletId: props.currentWalletId,
+            uploadingCurrentDir: currentDir,
+            uploadingFilename: file.name,
+            status: 'uploading'
+          }
+    });
+    */
+
+    await sendMessage('hat-sh', [ "doStreamFetch",
+      `${CONFIG.API_HOST}/api/objects/` + getCurrentWalletId.value + '?pathType=file' + '&path=' + encodeURIComponent('/.sync/' + item.file.path),
+      user?.value?.token, item.id
+    ], 'background');
+
+    //isDownloading.value = true;
+
+    /*
+    if (encryptionMethodState === "publicKey") {
+
+      let mode = "derive";
+
+      await sendMessage('hat-sh', [ "requestEncKeyPair", privateKey, publicKey, mode ], 'background');
+    }
+    */
+
+    //if (encryptionMethodState === "secretKey") {
+    await sendMessage('hat-sh', [ "requestEncryption", JSON.stringify(user.value?.unlockPassword) ], 'background');
+    //}
+  } else {
+    // console.log("out of files")
+  }
+};
+
+const continueEncryption = () => {
+  const item = queue.value[currFile.value];
+  requestNextChunk(item.id, item.fd)
+      .then(async (value) => {
+        const { fd, chunk, bytesRead, eof } = value as { fd: any; chunk: ArrayBuffer; bytesRead: number; eof: boolean };
+
+        const chunkString = encodeArrayBufferToUrlSafeBase64(chunk.slice(0, bytesRead));
+
+        await sendMessage('hat-sh', [ "encryptRestOfChunks", chunkString, eof, item.id ], 'background');
+      });
+};
+
 </script>
 
 <template>
@@ -327,9 +558,6 @@ const createFolder = async (path, name) => {
     <div class="actions">
       <div class="action">
         <a target="_blank" rel="noreferrer" @click="chooseDirectory">Choose directory</a>
-      </div>
-      <div class="action" v-if="false && state.directory">
-        <a target="_blank" rel="noreferrer" @click="readFile">Test local file read/write</a>
       </div>
     </div>
     <div class="messages">

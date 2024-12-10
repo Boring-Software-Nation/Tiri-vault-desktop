@@ -26,14 +26,14 @@ function filetree(rootPath: string) {
       const p = path.relative(rootPath, nodePath);
       return {
         name: p ? path.basename(nodePath) : "/",
-        path: p,
+        path: p.replaceAll(path.sep, '/'),
         type: "directory",
         mtime: stats.mtimeMs,
         children: await Promise.all(children.map(async (child) => buildNode(path.join(nodePath, child)))),
       };
     } else {
       result.files++;
-      return { name: path.basename(nodePath), path: path.relative(rootPath, nodePath), type: "file", mtime: stats.mtimeMs };
+      return { name: path.basename(nodePath), path: path.relative(rootPath, nodePath).replaceAll(path.sep, '/'), type: "file", mtime: stats.mtimeMs };
     }
   }
 
