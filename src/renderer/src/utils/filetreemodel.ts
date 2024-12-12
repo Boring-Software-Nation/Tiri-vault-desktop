@@ -56,7 +56,12 @@ export function diffTrees(
 
       if (node1.model.type === 'file') {
         if (node1.model.hash !== node2.model.hash) {
-          download.push(node2); // File content differs
+          // File content differs
+          if (node1.model.mtime > node2.model.mtime) {
+            upload.push(node1);
+          } else {
+            download.push(node2);
+          }
         }
         return;
       } else if (node1.model.type === 'directory') {
