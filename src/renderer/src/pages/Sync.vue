@@ -5,13 +5,11 @@ import { storeToRefs } from 'pinia';
 import { userStorage, useUserStore } from '~/store/user';
 import { useWalletsStore } from "~/store/wallet";
 import { loginOrRegisterUser } from "~/services/backend";
-import { decodeUrlSafeBase64ToArrayBuffer, encodeArrayBufferToUrlSafeBase64 } from "@renderer/utils/base64";
-import TreeModel from "tree-model";
+import { decodeUrlSafeBase64ToArrayBuffer, encodeArrayBufferToUrlSafeBase64 } from "~/utils/base64";
+import { FileTreeModel, FileTreeNode, diffTrees, parseFileTreeModel } from "~/utils/filetreemodel";
 import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
 import { onMessage, sendMessage } from '~/hat-sh/';
-import {CHUNK_SIZE} from "~/hat-sh-config/constants";
-import { on } from "events";
 
 const walletStore = useWalletsStore();
 const { allWallets, pushNotification, getSelectedWallet } = walletStore;
@@ -20,18 +18,6 @@ const userStore = useUserStore();
 const { loadUsage, loadSubscriptions } = userStore;
 const { user } = storeToRefs(userStore);
 const selectedWallet = ref(null);
-
-type FileTreeNode = {
-  name: string,
-  path: string,
-  type: 'file'|'directory',
-  mtime: number,
-  hash?: string,
-  children?: FileTreeNode[]
-}
-type FileTreeModel = TreeModel.Node<FileTreeNode>|null;
-
-const treeModel = new TreeModel();
 
 const localTree = shallowRef<FileTreeModel>(null);
 const remoteTree = shallowRef<FileTreeModel>(null);
@@ -184,7 +170,7 @@ ipcOn('replaceMessage', (event, message, oldMessage) => {
 
 ipcOn('filetree', async (event, filetree) => {
   //console.log('Filetree:', filetree);
-  localTree.value = treeModel.parse(filetree);
+  localTree.value = parseFileTreeModel(filetree);
   console.log('Local tree:', localTree.value?.model);
   //state.messages.push(`Filetree: ${JSON.stringify(filetree)}`);
   if (user.value?.token) {
@@ -224,23 +210,19 @@ const fetchRemoteTree = async () => {
 const onRemoteTreeDecrypted = async (decrypted) => {
   console.log('Remote tree decrypted:', decrypted);
   const tree = JSON.parse(decrypted);
-  remoteTree.value = treeModel.parse(tree);
+  remoteTree.value = parseFileTreeModel(tree);
   console.log('Remote tree:', remoteTree.value?.model);
   processTrees();
 }
 
 const processTrees = async () => {
-  const uploadDiff = getTreeDiff(localTree.value, remoteTree.value);
-  console.log('Upload diff:', uploadDiff);
+  const { upload, remove, localRemove, download } = diffTrees(localTree.value, remoteTree.value);
+  console.log('Upload diff:', upload);
   state.messages.push('Syncing...');
-  uploadFiles(uploadDiff);
+  uploadFiles(upload);
 }
 
-const getTreeDiff = (tree1:FileTreeModel, tree2:FileTreeModel) => {
-  return tree1; // TODO
-}
-
-const uploadFiles = async (diff:FileTreeModel) => {
+const uploadFiles = async (diff:FileTreeModel[]) => {
   const r = await getObjects('/');
   if (r.files.length === 0) {
     await createFolder('', '');
@@ -249,22 +231,26 @@ const uploadFiles = async (diff:FileTreeModel) => {
 
   numberOfFiles = 0;
   queue.value = [];
-  diff?.walk((node) => {
-    if (node.model.type === 'directory' && node.model.path) {
-      console.log('Dir:', node.model);
-      createFolder('/.sync', node.model.path);
-      state.messages.push(`Folder: ${node.model.path}`);
-    } else if (node.model.type === 'file') {
-      console.log('File:', node.model);
-      state.messages.push(`Staging file for upload: ${node.model.path}`);
-      numberOfFiles++;
-      queue.value.push({id: queue.value.length+1, file: node.model});
-    }
-    return true;
+  diff.forEach((item) => {
+    item?.walk((node) => {
+      if (node.model.type === 'directory' && node.model.path) {
+        console.log('Dir:', node.model);
+        createFolder('/.sync', node.model.path);
+        state.messages.push(`Folder: ${node.model.path}`);
+      } else if (node.model.type === 'file') {
+        console.log('File:', node.model);
+        state.messages.push(`Staging file for upload: ${node.model.path}`);
+        numberOfFiles++;
+        queue.value.push({id: queue.value.length+1, file: node.model});
+      }
+      return true;
+    });
   });
   if (numberOfFiles > 0) {
     currFile.value = 0;
     prepareFile();
+  } else {
+    onUploadFinished();
   }
 }
 
