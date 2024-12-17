@@ -2,7 +2,7 @@
 // It has to be in root for scope issues
 
 import { APP_URL, encoder, sigCodes, decoder } from "./hat-sh-config.js";
-import {decodeUrlSafeBase64ToArrayBuffer} from "./src/utils/base64";
+import { decodeUrlSafeBase64ToArrayBuffer, encodeArrayBufferToUrlSafeBase64 } from "./src/utils/base64";
 import _sodium, { ready } from "libsodium-wrappers-sumo";
 
 self.addEventListener("install", (event) => {
@@ -150,6 +150,10 @@ addEventListener("message", (e) => {
 
       case "decryptBuffer":
         decryptBuffer(params[0], params[1], sender);
+        break;
+
+      case "decryptFileChunk":
+        decryptFileChunk(params[0], params[1], params[2], params[3], params[4], sender);
         break;
 
       default:
@@ -674,3 +678,31 @@ const decryptBuffer = async (data, password, client) => {
   );
   client.postMessage({ id: 'hat-sh-buffer', action: "bufferDecrypted", data: decrypted.message });
 };
+
+const decryptFileChunk = async (password, signature, salt, header, decFileBuff, client) => {
+  signature = decodeUrlSafeBase64ToArrayBuffer(signature);
+  salt = decodeUrlSafeBase64ToArrayBuffer(salt);
+  header = decodeUrlSafeBase64ToArrayBuffer(header);
+  decFileBuff = decodeUrlSafeBase64ToArrayBuffer(decFileBuff);
+
+  const key = sodium.crypto_pwhash(
+    sodium.crypto_secretstream_xchacha20poly1305_KEYBYTES,
+    password,
+    salt,
+    sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE,
+    sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+    sodium.crypto_pwhash_ALG_ARGON2ID13
+  );
+
+  const state = await sodium.crypto_secretstream_xchacha20poly1305_init_pull(
+    header,
+    key
+  );
+
+  const decrypted = await sodium.crypto_secretstream_xchacha20poly1305_pull(
+    state,
+    decFileBuff
+  );
+
+  client.postMessage({ id: 'hat-sh-file', action: "chunkDecrypted", data: encodeArrayBufferToUrlSafeBase64(decrypted.message) });
+}

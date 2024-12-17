@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CONFIG } from "~/env";
+import { CHUNK_SIZE, crypto_secretstream_xchacha20poly1305_ABYTES } from "~/hat-sh-config/constants";
 import { reactive, computed, onMounted, ref, watchEffect, unref, shallowRef} from "vue";
 import { storeToRefs } from 'pinia';
 import { userStorage, useUserStore } from '~/store/user';
@@ -10,6 +11,8 @@ import { FileTreeModel, FileTreeNode, diffTrees, parseFileTreeModel } from "~/ut
 import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
 import { onMessage, sendMessage } from '~/hat-sh/';
+import { Buffer } from 'buffer';
+import {formatName} from "~/utils/formatName";
 
 const walletStore = useWalletsStore();
 const { allWallets, pushNotification, getSelectedWallet } = walletStore;
@@ -55,35 +58,12 @@ watchEffect(async () => {
   }
 });
 
-//const userStore = useUserStore();
-//const { user } = storeToRefs(userStore)
 
 const state = reactive({
   directory: '',
   messages: [] as string[],
 });
 
-/*
-const write = {
-  writing: false,
-  writeFd: null,
-  writeQueue: [] as { chunk: Buffer, bytes: number, eof: boolean }[],
-}
-
-const writeQueuedChunk = () => {
-  if (!write.writeFd) {
-    state.messages.push("Queue: no write file descriptor");
-    return;
-  }
-  if (write.writeQueue.length) {
-    const q = write.writeQueue.shift();
-    if (q) {
-      state.messages.push(`Writing: ${q.bytes}, eof: ${q.eof}, queue length: ${write.writeQueue.length}`);
-      window.electron.ipcRenderer.send('writeNextChunk', write.writeFd, q.chunk, q.bytes, q.eof);
-    }
-  }
-}
-*/
 
 const chooseDirectory = () => ipcSend('chooseDirectory')
 const openDirectory = () => ipcSend('openDirectory')
@@ -111,6 +91,7 @@ const requestNextChunk = (id: number, fd: any) => {
 
 ipcOn('chunkRead', (event, id, fd, chunk, bytesRead, eof) => {
   const {resolve, reject} = chunkWaiters.get(id);
+  chunkWaiters.delete(id);
 
   console.log('Chunk read:', id, fd, chunk, bytesRead, eof);
   if(!fd) {
@@ -119,43 +100,6 @@ ipcOn('chunkRead', (event, id, fd, chunk, bytesRead, eof) => {
   console.log(`Read: ${bytesRead}`);
   resolve({ fd, chunk, bytesRead, eof });
 });
-
-/*
-  if (write.writing) {
-    write.writeQueue.push({ chunk, bytes: bytesRead, eof });
-    state.messages.push(`Queued to write, queue length: ${write.writeQueue.length}`);
-    if(write.writeFd) {
-      writeQueuedChunk();
-    }
-  } else {
-    write.writing = true;
-    state.messages.push(`Start writing 2.dat: ${bytesRead}, eof: ${eof}`);
-    window.electron.ipcRenderer.send('writeFile', '2.dat', chunk, bytesRead, eof);
-  }
-  if (!eof) {
-    readNextChunk(fd);
-  }
-*/
-
-/*
-window.electron.ipcRenderer.on('chunkWritten', (event, fd, bytes, eof) => {
-  console.log('Chunk written:', fd, bytes, eof);
-  if (!fd) {
-    state.messages.push("No write file descriptor");
-    write.writeFd = null;
-    return;
-  }
-  if (eof) {
-    state.messages.push(`Writing finished, queue length: ${write.writeQueue.length}`);
-    write.writing = false;
-    write.writeFd = null;
-    return;
-  }
-  write.writeFd = fd;
-  state.messages.push(`Written: ${bytes}`);
-  writeQueuedChunk();
-})
-*/
 
 ipcOn('addMessage', (event, message) => {
   state.messages.push(message);
@@ -215,11 +159,21 @@ const onRemoteTreeDecrypted = async (decrypted) => {
   processTrees();
 }
 
+let diffs:{
+  upload: FileTreeModel[],
+  remove: FileTreeModel[],
+  localRemove: FileTreeModel[],
+  download: FileTreeModel[],
+}
+
 const processTrees = async () => {
-  const { upload, remove, localRemove, download } = diffTrees(localTree.value, remoteTree.value);
-  console.log('Upload diff:', upload);
+  diffs = diffTrees(localTree.value, remoteTree.value);
+  console.log('Upload diff:', diffs.upload);
+  console.log('Remove diff:', diffs.remove);
+  console.log('Local remove diff:', diffs.localRemove);
+  console.log('Download diff:', diffs.download);
   state.messages.push('Syncing...');
-  uploadFiles(upload);
+  uploadFiles(diffs.upload);
 }
 
 const uploadFiles = async (diff:FileTreeModel[]) => {
@@ -228,6 +182,8 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
     await createFolder('', '');
   }
   await createFolder('/', '.sync');
+
+  state.messages.push('Uploading files...');
 
   numberOfFiles = 0;
   queue.value = [];
@@ -255,9 +211,42 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
 }
 
 const onUploadFinished = () => {
-  storeLocalTree();
+  downloadFiles(diffs.download);
+}
+
+const downloadFiles = async (diff:FileTreeModel[]) => {
+  state.messages.push('Downloading files...');
+
+  const items:FileTreeModel[] = [];
+
+  diff.forEach((item) => {
+    item?.walk((node) => {
+      if (node.model.type === 'directory' && node.model.path) {
+        console.log('Dir:', node.model);
+        ipcSend('createDirectory', node.model.path);
+        state.messages.push(`Folder: ${node.model.path}`);
+      } else if (node.model.type === 'file') {
+        console.log('File:', node.model);
+        state.messages.push(`Staging file for download: ${node.model.path}`);
+        items.push(node);
+        //queue.value.push({id: queue.value.length+1, file: node.model});
+      }
+      return true;
+    });
+  });
+
+  if (items.length > 0) {
+    download(items);
+  } else {
+    onDownloadFinished();
+  }
+}
+
+const onDownloadFinished = () => {
+  //storeLocalTree();
   state.messages.push('Synced');
 }
+
 
 const storeLocalTree = async () => {
   encryptLocalTree();
@@ -485,10 +474,6 @@ onMessage('hat-sh-buffer', async (message) => {
     }
 });
 
-const updateCurrFile = () => {
-  currFile.value += 1;
-};
-
 const prepareFile = async () => {
   // send file name to sw
   const item = queue.value[currFile.value];
@@ -577,6 +562,107 @@ const continueEncryption = () => {
         await sendMessage('hat-sh', [ "encryptRestOfChunks", chunkString, eof, item.id ], 'background');
       });
 };
+
+let dlItems:FileTreeModel[];
+let currItem:number;
+let decWaiter:any;
+let writeWaiter:any;
+
+const download = async (items:FileTreeModel[]) => {
+  dlItems = items;
+  currItem = 0;
+  downloadItem();
+};
+
+const downloadItem = async () => {
+  const item = dlItems[currItem];
+  if(!item) {
+    onDownloadFinished();
+    return;
+  }
+
+  state.messages.push(`Downloading file: ${item.model.path}`);
+  const data = await downloadObject(item.model.path);
+  console.log('Fetched data:', data);
+
+  const file = data;
+  const signature = await file.slice(0, 11).arrayBuffer();
+  const salt = await file.slice(11, 27).arrayBuffer();
+  const header = await file.slice(27, 51).arrayBuffer();
+  let index = 51;
+  let fd:any;
+  while(index < data.size) {
+    const chunk = await file.slice(index, index + CHUNK_SIZE + crypto_secretstream_xchacha20poly1305_ABYTES).arrayBuffer();
+    const newIndex = index + CHUNK_SIZE + crypto_secretstream_xchacha20poly1305_ABYTES;
+    const decPromise = new Promise<ArrayBuffer>((resolve, reject) => {
+      decWaiter = {resolve, reject};
+    });
+    await sendMessage('hat-sh', [ "decryptFileChunk",
+      JSON.stringify(user.value?.unlockPassword),
+      encodeArrayBufferToUrlSafeBase64(signature),
+      encodeArrayBufferToUrlSafeBase64(salt),
+      encodeArrayBufferToUrlSafeBase64(header),
+      encodeArrayBufferToUrlSafeBase64(chunk),
+      newIndex >= data.size
+    ], 'background');
+    const decChunk:ArrayBuffer = await decPromise;
+
+    const writePromise = new Promise((resolve, reject) => {
+      writeWaiter = {resolve, reject};
+    });
+    if (index === 51) {
+      ipcSend('writeFile', currItem+1, item.model.path, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
+    } else {
+      ipcSend('writeNextChunk', currItem+1, fd, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
+    }
+    fd = await writePromise;
+    index = newIndex;
+  }
+  currItem++;
+  if (currItem < dlItems.length) {
+    downloadItem();
+  } else {
+    onDownloadFinished();
+  }
+};
+
+const downloadObject = async (path) => {
+  const response = await api.objects.objectsDetail(
+      getCurrentWalletId.value,
+      { query: { pathType: 'file',
+          path: encodeURIComponent('.sync/' + path),
+          serviceName: 'worker', format: 'blob' }, format: 'blob'} as any
+  );
+  return response.data;
+};
+
+onMessage('hat-sh-file', async (message) => {
+  const { action, data } = message;
+  console.log('Sync/file - onMessage:', action, data);
+
+  switch (action) {
+    case 'chunkDecrypted':
+      onChunkDecrypted(data);
+      break;
+    }
+});
+
+const onChunkDecrypted = async (decrypted) => {
+  const decChunk = decodeUrlSafeBase64ToArrayBuffer(decrypted);
+  const {resolve, reject} = decWaiter;
+  resolve(decChunk);
+};
+
+ipcOn('chunkWritten', (event, id, fd, bytes, eof) => {
+  console.log('Chunk written:', id, fd, bytes, eof);
+  const {resolve, reject} = writeWaiter;
+
+  if (!fd) {
+    reject("No write file descriptor");
+    return;
+  }
+  resolve(fd);
+});
 
 </script>
 

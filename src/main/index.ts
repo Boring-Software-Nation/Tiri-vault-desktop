@@ -85,8 +85,9 @@ app.whenReady().then(() => {
   ipcMain.on('getDirectory', () => getDirectory());
   ipcMain.on('readFile', (event, id, fileName) => readFile(id, fileName))
   ipcMain.on('readNextChunk', (event, id, fd) => readNextChunk(id, fd))
-  ipcMain.on('writeFile', (event, fileName, buffer, bytes, eof) => writeFile(fileName, buffer, bytes, eof))
-  ipcMain.on('writeNextChunk', (event, fd, buffer, bytes, eof) => writeNextChunk(fd, buffer, bytes, eof))
+  ipcMain.on('writeFile', (event, id, fileName, buffer, bytes, eof) => writeFile(id, fileName, buffer, bytes, eof))
+  ipcMain.on('writeNextChunk', (event, id, fd, buffer, bytes, eof) => writeNextChunk(id, fd, buffer, bytes, eof))
+  ipcMain.on('createDirectory', (event, path) => createDirectory(path))
 
   createWindow();
 
@@ -140,7 +141,7 @@ function openDirectory() {
 }
 
 function readFile(id: any, fileName: string) {
-  fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
+  fileName = fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
   fs.open(directory + '/' + fileName, 'r', (err: any, fd: any) => {
     if (err) {
       sendMessage('chunkRead', id, null);
@@ -178,38 +179,49 @@ function readNextChunk(id: any, fd: any) {
   });
 }
 
-function writeFile(fileName: string, buffer: any, bytes, eof) {
-  fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
+function writeFile(id: any, fileName: string, buffer: any, bytes, eof) {
+  fileName = fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
   fs.open(directory + '/' + fileName, 'w', (err: any, fd: any) => {
     if (err) {
-      sendMessage('chunkWritten', null);
+      sendMessage('chunkWritten', id, null);
       return;
     }
     fs.write(fd, buffer, 0, bytes, (err: any, written: any, buffer: any) => {
       if (err) {
-        sendMessage('chunkWritten', null);
+        sendMessage('chunkWritten', id, null);
         fs.close(fd, () => {});
         return;
       }
       if (eof) {
         fs.close(fd, () => {});
       }
-      sendMessage('chunkWritten', fd, written, eof);
+      sendMessage('chunkWritten', id, fd, written, eof);
     });
   });
 }
 
-function writeNextChunk(fd: any, buffer: any, bytes, eof) {
+function writeNextChunk(id: any, fd: any, buffer: any, bytes, eof) {
   //log('writeNextChunk', fd, bytes, eof);
   fs.write(fd, buffer, 0, bytes, (err: any, written: any, buffer: any) => {
     if (err) {
-      sendMessage('chunkWritten', null);
+      sendMessage('chunkWritten', id, null);
       fs.close(fd, () => {});
       return;
     }
     if (eof) {
       fs.close(fd, () => {});
     }
-    sendMessage('chunkWritten', fd, written, eof);
+    sendMessage('chunkWritten', id, fd, written, eof);
+  });
+}
+
+function createDirectory(path: string) {
+  path = path.replaceAll('..', ''); // simple safety sanitization, improve it as needed
+  fs.mkdir(directory + '/' + path, { recursive: true },  (err: any) => {
+    if (err) {
+      sendMessage('mkdir', path, false);
+      return;
+    }
+    sendMessage('mkdir', path, true);
   });
 }
