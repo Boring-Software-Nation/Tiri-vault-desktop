@@ -7,7 +7,7 @@ import { userStorage, useUserStore } from '~/store/user';
 import { useWalletsStore } from "~/store/wallet";
 import { loginOrRegisterUser } from "~/services/backend";
 import { decodeUrlSafeBase64ToArrayBuffer, encodeArrayBufferToUrlSafeBase64 } from "~/utils/base64";
-import { FileTreeModel, FileTreeNode, diffTrees, parseFileTreeModel } from "~/utils/filetreemodel";
+import { FileDiffs, FileTreeModel, FileTreeNode, diffTrees, parseFileTreeModel } from "~/utils/filetreemodel";
 import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
 import { onMessage, sendMessage } from '~/hat-sh/';
@@ -159,12 +159,7 @@ const onRemoteTreeDecrypted = async (decrypted) => {
   processTrees();
 }
 
-let diffs:{
-  upload: FileTreeModel[],
-  remove: FileTreeModel[],
-  localRemove: FileTreeModel[],
-  download: FileTreeModel[],
-}
+let diffs:FileDiffs;
 
 const processTrees = async () => {
   diffs = diffTrees(localTree.value, remoteTree.value);
@@ -172,6 +167,7 @@ const processTrees = async () => {
   console.log('Remove diff:', diffs.remove);
   console.log('Local remove diff:', diffs.localRemove);
   console.log('Download diff:', diffs.download);
+  console.log('Merged tree:', diffs.merged);
   state.messages.push('Syncing...');
   uploadFiles(diffs.upload);
 }
@@ -243,22 +239,22 @@ const downloadFiles = async (diff:FileTreeModel[]) => {
 }
 
 const onDownloadFinished = () => {
-  //storeLocalTree();
+  storeTreeModel();
   state.messages.push('Synced');
 }
 
 
-const storeLocalTree = async () => {
-  encryptLocalTree();
+const storeTreeModel = async () => {
+  encryptTreeModel();
 }
 
-const encryptLocalTree = async () => {
-  const tree = localTree.value?.model;
+const encryptTreeModel = async () => {
+  const tree = diffs.merged?.model||{};
   const treeString = JSON.stringify(tree);
   sendMessage('hat-sh', [ "encryptBuffer", treeString, JSON.stringify(user.value?.unlockPassword) ], 'background');
 };
 
-const onLocalTreeEncrypted = async (encryptedData) => {
+const onTreeModelEncrypted = async (encryptedData) => {
   const base64data = {
     salt: encodeArrayBufferToUrlSafeBase64(encryptedData.salt),
     header: encodeArrayBufferToUrlSafeBase64(encryptedData.header),
@@ -466,7 +462,7 @@ onMessage('hat-sh-buffer', async (message) => {
 
   switch (action) {
     case 'bufferEncrypted':
-      onLocalTreeEncrypted(data);
+      onTreeModelEncrypted(data);
       break;
     case 'bufferDecrypted':
       onRemoteTreeDecrypted(String.fromCodePoint(...data));

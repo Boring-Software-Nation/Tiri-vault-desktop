@@ -11,6 +11,14 @@ export type FileTreeNode = {
 
 export type FileTreeModel = TreeModel.Node<FileTreeNode>|null;
 
+export type FileDiffs = {
+  upload: FileTreeModel[];
+  remove: FileTreeModel[];
+  localRemove: FileTreeModel[];
+  download: FileTreeModel[];
+  merged: FileTreeModel;
+}
+
 const treeModel = new TreeModel();
 
 export function parseFileTreeModel(node: FileTreeNode|null): FileTreeModel {
@@ -22,11 +30,34 @@ const parse = parseFileTreeModel; // shortcut
 export function diffTrees(
   tree1: FileTreeModel,
   tree2: FileTreeModel
-): { upload: FileTreeModel[]; remove: FileTreeModel[]; localRemove: FileTreeModel[]; download: FileTreeModel[] } {
+): FileDiffs {
   const upload: FileTreeModel[] = [];
   const remove: FileTreeModel[] = [];
   const localRemove: FileTreeModel[] = [];
   const download: FileTreeModel[] = [];
+  const merged: TreeModel.Node<FileTreeNode> = treeModel.parse<TreeModel.Node<FileTreeNode>>(JSON.parse(JSON.stringify(tree2?.model||{}))); // deep copy of tree2
+
+  function merge(node: TreeModel.Node<FileTreeNode>) {
+    console.log('merge:', node);
+    if (node.model.name === '/') { // root node
+      merged.model = node.model;
+      return;
+    }
+    const parentPath = node.model.path.split('/').slice(0, -1).join('/');
+    console.log('merge: parentPath', parentPath);
+    const parentMerged = merged.first(n => n.model.path === parentPath);
+    console.log('merge: parent', parentMerged);
+    if(!parentMerged) {
+      console.error('merge: Parent not found', parentPath);
+      return;
+    }
+    const mergedNode = parentMerged.first(n => n.model.path === node.model.path);
+    if (mergedNode) {
+      mergedNode.model = node.model;
+    } else {
+      parentMerged.addChild(node);
+    }
+  }
 
   // Helper function to compare nodes recursively
   function compareNodes(node1: FileTreeModel, node2: FileTreeModel) {
@@ -39,6 +70,7 @@ export function diffTrees(
     if (node1 && !node2) {
       // TODO: check for remote removing
       upload.push(node1); // Node exists only in tree1
+      merge(node1);
       return;
     }
     if (node1 && node2) {
@@ -47,6 +79,7 @@ export function diffTrees(
         if (node1.model.mtime > node2.model.mtime) {
           remove.push(node2);
           upload.push(node1);
+          merge(node1);
         } else {
           localRemove.push(node1);
           download.push(node2);
@@ -59,6 +92,7 @@ export function diffTrees(
           // File content differs
           if (node1.model.mtime > node2.model.mtime) {
             upload.push(node1);
+            merge(node1);
           } else {
             download.push(node2);
           }
@@ -81,5 +115,5 @@ export function diffTrees(
 
   compareNodes(tree1, tree2);
 
-  return { upload, remove, localRemove, download };
+  return { upload, remove, localRemove, download, merged };
 }
