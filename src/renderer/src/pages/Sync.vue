@@ -260,7 +260,7 @@ const onTreeModelEncrypted = async (encryptedData) => {
     header: encodeArrayBufferToUrlSafeBase64(encryptedData.header),
     encrypted: encodeArrayBufferToUrlSafeBase64(encryptedData.encrypted),
   }
-  const base64body = encodeArrayBufferToUrlSafeBase64(new TextEncoder().encode(JSON.stringify(base64data)).buffer);
+  const base64body = encodeArrayBufferToUrlSafeBase64(new TextEncoder().encode(JSON.stringify(base64data)).buffer as ArrayBuffer);
   //console.log('Local tree encrypted:', base64data);
 
   const token = user.value?.token;
