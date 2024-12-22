@@ -12,7 +12,7 @@ import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
 import { onMessage, sendMessage } from '~/hat-sh/';
 import { Buffer } from 'buffer';
-import {formatName} from "~/utils/formatName";
+import { io, Socket } from 'socket.io-client';
 
 const walletStore = useWalletsStore();
 const { allWallets, pushNotification, getSelectedWallet } = walletStore;
@@ -56,6 +56,9 @@ watchEffect(async () => {
       fetchRemoteTree();
     }
   }
+  if (user.value?.token) {
+    startWebsocketClient();
+  }
 });
 
 
@@ -63,6 +66,38 @@ const state = reactive({
   directory: '',
   messages: [] as string[],
 });
+
+let socket: Socket|null = null;
+
+const startWebsocketClient = () => {
+  if (!CONFIG.WS_URL) {
+    console.error('No WebSocket URL');
+    return;
+  }
+
+  if (socket) {
+    socket.close();
+  }
+
+  socket = io(CONFIG.WS_URL, {
+    auth: {
+      token: user.value?.token,
+    },
+  });
+
+  socket.on('connect', () => {
+    console.log('Connected to WebSocket server');
+    if (!socket) {
+      return;
+    }
+
+    socket.emit('message', { text: 'Hello from client!' });
+
+    socket.on('response', (data) => {
+      console.log('Server response:', data);
+    });
+  });
+};
 
 
 const chooseDirectory = () => ipcSend('chooseDirectory')
