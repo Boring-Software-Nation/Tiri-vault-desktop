@@ -68,6 +68,7 @@ const state = reactive({
 });
 
 let socket: Socket|null = null;
+let socketTimeout = 1000;
 
 const startWebsocketClient = () => {
   if (!CONFIG.WS_URL) {
@@ -76,14 +77,26 @@ const startWebsocketClient = () => {
   }
 
   if (socket) {
-    socket.close();
+    //socket.close();
+    return;
   }
 
-  socket = io(CONFIG.WS_URL, {
-    auth: {
-      token: user.value?.token,
-    },
-  });
+  try {
+    socket = io(CONFIG.WS_URL, {
+      auth: {
+        token: user.value?.token,
+      },
+    });
+  } catch (e) {
+    console.error('WebSocket error:', e);
+    setTimeout(() => {
+      startWebsocketClient();
+    }, socketTimeout);
+    socketTimeout *= 2;
+    return;
+  }
+
+  socketTimeout = 1000;
 
   socket.on('connect', () => {
     console.log('Connected to WebSocket server');
@@ -91,10 +104,22 @@ const startWebsocketClient = () => {
       return;
     }
 
-    socket.emit('message', { text: 'Hello from client!' });
+    socket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket server');
+      socket = null;
+      setTimeout(() => {
+        startWebsocketClient();
+      }, 1000);
+    });
 
-    socket.on('response', (data) => {
-      console.log('Server response:', data);
+    socket.on('treeUpdated', (data) => {
+      console.log('Tree Updated server message:', data);
+      if (data.clientId !== socket?.id) {
+        // TODO: restart sync
+        //fetchRemoteTree();
+      } else {
+        console.log('Ignoring own message');
+      }
     });
   });
 };
@@ -305,7 +330,7 @@ const onTreeModelEncrypted = async (encryptedData) => {
       'Authorization': `Basic ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ tree: base64body }),
+    body: JSON.stringify({ tree: base64body, clientId: socket?.id }),
   });
   console.log('storeLocalTree response:', r);
 };
