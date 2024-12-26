@@ -623,6 +623,10 @@ let dlItems:FileTreeModel[];
 let currItem:number;
 let decWaiter:any;
 let writeWaiter:any;
+let tempFileWaiter:any;
+let renameWaiter:any;
+
+type TmpFile = { path: string; fd: any; };
 
 const download = async (items:FileTreeModel[]) => {
   dlItems = items;
@@ -640,6 +644,9 @@ const downloadItem = async () => {
   state.messages.push(`Downloading file: ${item.model.path}`);
   const data = await downloadObject(item.model.path);
   console.log('Fetched data:', data);
+
+  const tmpFile = await createTempFile(item.model.path.split('/').slice(0, -1).join('/'));
+  console.log('Temp file:', tmpFile);
 
   const file = data;
   const signature = await file.slice(0, 11).arrayBuffer();
@@ -666,14 +673,19 @@ const downloadItem = async () => {
     const writePromise = new Promise((resolve, reject) => {
       writeWaiter = {resolve, reject};
     });
+    /*
     if (index === 51) {
       ipcSend('writeFile', currItem+1, item.model.path, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
     } else {
       ipcSend('writeNextChunk', currItem+1, fd, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
     }
     fd = await writePromise;
+    */
+    ipcSend('writeNextChunk', currItem+1, tmpFile.fd, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
+    await writePromise;
     index = newIndex;
   }
+  await renameFile(tmpFile.path, item.model.path);
   currItem++;
   if (currItem < dlItems.length) {
     downloadItem();
@@ -720,6 +732,39 @@ ipcOn('chunkWritten', (event, id, fd, bytes, eof) => {
   resolve(fd);
 });
 
+const createTempFile = async (path) => {
+  const tempFilePromise = new Promise<TmpFile>((resolve, reject) => {
+    tempFileWaiter = {resolve, reject};
+  });
+  ipcSend('createTempFile', path);
+  return tempFilePromise;
+};
+
+ipcOn('tempFileCreated', (event, err, path, fd) => {
+  const {resolve, reject} = tempFileWaiter;
+  if (err) {
+    reject(err);
+    return;
+  }
+  resolve({ path, fd });
+});
+
+const renameFile = async (oldPath, newPath) => {
+  const renamePromise = new Promise((resolve, reject) => {
+    renameWaiter = {resolve, reject};
+  });
+  ipcSend('renameFile', oldPath, newPath);
+  return renamePromise;
+};
+
+ipcOn('fileRenamed', (event, err) => {
+  const {resolve, reject} = renameWaiter;
+  if (err) {
+    reject(err);
+    return;
+  }
+  resolve();
+});
 </script>
 
 <template>

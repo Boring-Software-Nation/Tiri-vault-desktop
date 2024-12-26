@@ -29,7 +29,13 @@ function filetree(rootPath: string) {
         path: p.replaceAll(path.sep, '/'),
         type: "directory",
         mtime: stats.mtimeMs,
-        children: await Promise.all(children.map(async (child) => buildNode(path.join(nodePath, child)))),
+        children: await Promise.all(
+          children.filter(
+            (child) => !(child.startsWith('tdvdl-') && child.endsWith('.tmp')) // filter out download temp files
+          ).map(
+            async (child) => buildNode(path.join(nodePath, child))
+          )
+        ),
       };
     } else {
       result.files++;
