@@ -93,6 +93,7 @@ app.whenReady().then(() => {
   ipcMain.on('createDirectory', (event, path) => createDirectory(path))
   ipcMain.on('createTempFile', (event, path) => createTempFile(path))
   ipcMain.on('renameFile', (event, oldPath, newPath) => renameFile(oldPath, newPath))
+  ipcMain.on('getFileTree', () => getFileTree())
 
   createWindow();
 
@@ -139,6 +140,10 @@ function chooseDirectory() {
       sendMessage('directorySelected', result.filePaths[0]);
       readDirectory(directory);
     })
+}
+
+function getFileTree() {
+  readDirectory(directory);
 }
 
 function openDirectory() {
