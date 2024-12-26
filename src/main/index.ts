@@ -1,5 +1,5 @@
 import { app, shell, dialog, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { join, relative } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import fs from 'fs';
@@ -7,6 +7,9 @@ import Store from 'electron-store';
 import express from 'express';
 import { log, sendMessage } from './common';
 import { getTree, isFileTreeReady, readDirectory } from './filetree';
+import tmp from 'tmp';
+
+tmp.setGracefulCleanup();
 
 const PORT = 5174;
 
@@ -88,6 +91,9 @@ app.whenReady().then(() => {
   ipcMain.on('writeFile', (event, id, fileName, buffer, bytes, eof) => writeFile(id, fileName, buffer, bytes, eof))
   ipcMain.on('writeNextChunk', (event, id, fd, buffer, bytes, eof) => writeNextChunk(id, fd, buffer, bytes, eof))
   ipcMain.on('createDirectory', (event, path) => createDirectory(path))
+  ipcMain.on('createTempFile', (event, path) => createTempFile(path))
+  ipcMain.on('renameFile', (event, oldPath, newPath) => renameFile(oldPath, newPath))
+  ipcMain.on('getFileTree', () => getFileTree())
 
   createWindow();
 
@@ -134,6 +140,10 @@ function chooseDirectory() {
       sendMessage('directorySelected', result.filePaths[0]);
       readDirectory(directory);
     })
+}
+
+function getFileTree() {
+  readDirectory(directory);
 }
 
 function openDirectory() {
@@ -223,5 +233,26 @@ function createDirectory(path: string) {
       return;
     }
     sendMessage('mkdir', path, true);
+  });
+}
+
+function createTempFile(dir: string) {
+  tmp.file({ tmpdir: directory, dir: dir, prefix: 'tdvdl-', postfix: '.tmp' }, (err, path, fd) => {
+    if (err) {
+      log('Error creating temp file:', err);
+    } else
+      log('TempFile created: ', path, fd);
+    sendMessage('tempFileCreated', err, relative(directory, path), fd);
+  });
+}
+
+function renameFile(oldPath: string, newPath: string) {
+  oldPath = oldPath.replaceAll('..', ''); // simple safety sanitization, improve it as needed
+  newPath = newPath.replaceAll('..', ''); // simple safety sanitization, improve it as needed
+  fs.rename(directory + '/' + oldPath, directory + '/' + newPath, (err: any) => {
+    if (err) {
+      log('Error renaming file:', err, oldPath, newPath);
+    }
+    sendMessage('fileRenamed', err, oldPath, newPath);
   });
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CONFIG } from "~/env";
 import { CHUNK_SIZE, crypto_secretstream_xchacha20poly1305_ABYTES } from "~/hat-sh-config/constants";
-import { reactive, computed, onMounted, ref, watchEffect, unref, shallowRef} from "vue";
+import { reactive, computed, onMounted, ref, watchEffect, unref, shallowRef, watch} from "vue";
 import { storeToRefs } from 'pinia';
 import { userStorage, useUserStore } from '~/store/user';
 import { useWalletsStore } from "~/store/wallet";
@@ -12,7 +12,7 @@ import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
 import { onMessage, sendMessage } from '~/hat-sh/';
 import { Buffer } from 'buffer';
-import {formatName} from "~/utils/formatName";
+import { io, Socket } from 'socket.io-client';
 
 const walletStore = useWalletsStore();
 const { allWallets, pushNotification, getSelectedWallet } = walletStore;
@@ -24,6 +24,9 @@ const selectedWallet = ref(null);
 
 const localTree = shallowRef<FileTreeModel>(null);
 const remoteTree = shallowRef<FileTreeModel>(null);
+
+const running = ref(false);
+const stopping = ref(false);
 
 type QuueItem = {
   id: number,
@@ -56,6 +59,9 @@ watchEffect(async () => {
       fetchRemoteTree();
     }
   }
+  if (user.value?.token) {
+    startWebsocketClient();
+  }
 });
 
 
@@ -64,13 +70,99 @@ const state = reactive({
   messages: [] as string[],
 });
 
+let socket: Socket|null = null;
+let socketTimeout = 1000;
+
+const startWebsocketClient = () => {
+  if (!CONFIG.WS_URL) {
+    console.error('No WebSocket URL');
+    return;
+  }
+
+  if (socket) {
+    //socket.close();
+    return;
+  }
+
+  try {
+    socket = io(CONFIG.WS_URL, {
+      auth: {
+        token: user.value?.token,
+      },
+    });
+  } catch (e) {
+    console.error('WebSocket error:', e);
+    setTimeout(() => {
+      startWebsocketClient();
+    }, socketTimeout);
+    socketTimeout *= 2;
+    return;
+  }
+
+  socketTimeout = 1000;
+
+  socket.on('connect', () => {
+    console.log('Connected to WebSocket server');
+    if (!socket) {
+      return;
+    }
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket server');
+      socket = null;
+      setTimeout(() => {
+        startWebsocketClient();
+      }, 1000);
+    });
+
+    socket.on('treeUpdated', async (data) => {
+      console.log('Tree Updated server message:', data);
+      if (data.clientId !== socket?.id) {
+        // restart sync
+        if (!running.value) {
+          restartSync(false);
+        } else if (!stopping.value) {
+          await stopSync(false);
+          restartSync(false);
+        }
+      } else {
+        console.log('Ignoring own message');
+      }
+    });
+  });
+};
+
+let stopWaiter:any;
+const stopSync = async (local:boolean) => {
+  stopping.value = true;
+  state.messages.push(local ? 'Stopping sync for restart due to local files changed...' : 'Stopping sync for restart due to remote files changed...');
+  const stopPromise = new Promise((resolve, reject) => {
+    stopWaiter = {resolve, reject};
+  });
+  return stopPromise;
+};
+watch(running, async (value) => {
+  if (!value && stopWaiter) {
+    const {resolve, reject} = stopWaiter;
+    stopWaiter = null;
+    stopping.value = false;
+    resolve();
+  }
+});
+
+const restartSync = (local:boolean) => {
+  state.messages = [];
+  state.messages.push(local ? 'Restarting sync due to local files changed...' : 'Restarting sync due to remote files changed...');
+  ipcSend('getFileTree');
+};
 
 const chooseDirectory = () => ipcSend('chooseDirectory')
 const openDirectory = () => ipcSend('openDirectory')
 
-ipcOn('directorySelected', (event, result) => {
+ipcOn('directorySelected', async (event, result) => {
   state.directory = result;
 })
+
 ipcSend('getDirectory');
 
 
@@ -113,6 +205,10 @@ ipcOn('replaceMessage', (event, message, oldMessage) => {
 });
 
 ipcOn('filetree', async (event, filetree) => {
+  if (running.value)
+    await stopSync(true);
+  running.value = true;
+
   //console.log('Filetree:', filetree);
   localTree.value = parseFileTreeModel(filetree);
   console.log('Local tree:', localTree.value?.model);
@@ -131,6 +227,12 @@ const fetchRemoteTree = async () => {
     },
   });
   console.log('fetchRemoteTree response:', r);
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   let encodedTree;
   try {
     //const t = await r.text();
@@ -153,6 +255,12 @@ const fetchRemoteTree = async () => {
 
 const onRemoteTreeDecrypted = async (decrypted) => {
   console.log('Remote tree decrypted:', decrypted);
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   const tree = JSON.parse(decrypted);
   remoteTree.value = parseFileTreeModel(tree);
   console.log('Remote tree:', remoteTree.value?.model);
@@ -162,6 +270,12 @@ const onRemoteTreeDecrypted = async (decrypted) => {
 let diffs:FileDiffs;
 
 const processTrees = async () => {
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   diffs = diffTrees(localTree.value, remoteTree.value);
   console.log('Upload diff:', diffs.upload);
   console.log('Remove diff:', diffs.remove);
@@ -185,6 +299,12 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
   queue.value = [];
   diff.forEach((item) => {
     item?.walk((node) => {
+
+      if (stopping.value) {
+        running.value = false;
+        return false;
+      }
+
       if (node.model.type === 'directory' && node.model.path) {
         console.log('Dir:', node.model);
         createFolder('/.sync', node.model.path);
@@ -198,6 +318,12 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
       return true;
     });
   });
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   if (numberOfFiles > 0) {
     currFile.value = 0;
     prepareFile();
@@ -207,6 +333,12 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
 }
 
 const onUploadFinished = () => {
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   downloadFiles(diffs.download);
 }
 
@@ -217,6 +349,12 @@ const downloadFiles = async (diff:FileTreeModel[]) => {
 
   diff.forEach((item) => {
     item?.walk((node) => {
+
+      if (stopping.value) {
+        running.value = false;
+        return false;
+      }
+
       if (node.model.type === 'directory' && node.model.path) {
         console.log('Dir:', node.model);
         ipcSend('createDirectory', node.model.path);
@@ -231,6 +369,11 @@ const downloadFiles = async (diff:FileTreeModel[]) => {
     });
   });
 
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   if (items.length > 0) {
     download(items);
   } else {
@@ -238,9 +381,26 @@ const downloadFiles = async (diff:FileTreeModel[]) => {
   }
 }
 
-const onDownloadFinished = () => {
+let storeTreeWaiter:any;
+let storeTreePromise:Promise<void>;
+
+const onDownloadFinished = async () => {
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
+  storeTreePromise = new Promise((resolve, reject) => {
+    storeTreeWaiter = {resolve, reject};
+  });
+
   storeTreeModel();
+
+  await storeTreePromise;
+
   state.messages.push('Synced');
+  running.value = false;
 }
 
 
@@ -263,6 +423,11 @@ const onTreeModelEncrypted = async (encryptedData) => {
   const base64body = encodeArrayBufferToUrlSafeBase64(new TextEncoder().encode(JSON.stringify(base64data)).buffer as ArrayBuffer);
   //console.log('Local tree encrypted:', base64data);
 
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   const token = user.value?.token;
   const r = await fetch(`${CONFIG.API_HOST}/api/sync/tree`, {
     method: 'PUT',
@@ -270,9 +435,11 @@ const onTreeModelEncrypted = async (encryptedData) => {
       'Authorization': `Basic ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ tree: base64body }),
+    body: JSON.stringify({ tree: base64body, clientId: socket?.id }),
   });
   console.log('storeLocalTree response:', r);
+  const { resolve, reject } = storeTreeWaiter;
+  resolve();
 };
 
 const getObjects = async (path, isSearch = false, params = {} as any) => {
@@ -471,6 +638,12 @@ onMessage('hat-sh-buffer', async (message) => {
 });
 
 const prepareFile = async () => {
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
   // send file name to sw
   const item = queue.value[currFile.value];
   state.messages.push(`Uploading file: ${item.file.path}`);
@@ -563,6 +736,10 @@ let dlItems:FileTreeModel[];
 let currItem:number;
 let decWaiter:any;
 let writeWaiter:any;
+let tempFileWaiter:any;
+let renameWaiter:any;
+
+type TmpFile = { path: string; fd: any; };
 
 const download = async (items:FileTreeModel[]) => {
   dlItems = items;
@@ -580,6 +757,9 @@ const downloadItem = async () => {
   state.messages.push(`Downloading file: ${item.model.path}`);
   const data = await downloadObject(item.model.path);
   console.log('Fetched data:', data);
+
+  const tmpFile = await createTempFile(item.model.path.split('/').slice(0, -1).join('/'));
+  console.log('Temp file:', tmpFile);
 
   const file = data;
   const signature = await file.slice(0, 11).arrayBuffer();
@@ -606,14 +786,19 @@ const downloadItem = async () => {
     const writePromise = new Promise((resolve, reject) => {
       writeWaiter = {resolve, reject};
     });
+    /*
     if (index === 51) {
       ipcSend('writeFile', currItem+1, item.model.path, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
     } else {
       ipcSend('writeNextChunk', currItem+1, fd, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
     }
     fd = await writePromise;
+    */
+    ipcSend('writeNextChunk', currItem+1, tmpFile.fd, Buffer.from(decChunk), decChunk.byteLength, newIndex >= data.size);
+    await writePromise;
     index = newIndex;
   }
+  await renameFile(tmpFile.path, item.model.path);
   currItem++;
   if (currItem < dlItems.length) {
     downloadItem();
@@ -660,6 +845,39 @@ ipcOn('chunkWritten', (event, id, fd, bytes, eof) => {
   resolve(fd);
 });
 
+const createTempFile = async (path) => {
+  const tempFilePromise = new Promise<TmpFile>((resolve, reject) => {
+    tempFileWaiter = {resolve, reject};
+  });
+  ipcSend('createTempFile', path);
+  return tempFilePromise;
+};
+
+ipcOn('tempFileCreated', (event, err, path, fd) => {
+  const {resolve, reject} = tempFileWaiter;
+  if (err) {
+    reject(err);
+    return;
+  }
+  resolve({ path, fd });
+});
+
+const renameFile = async (oldPath, newPath) => {
+  const renamePromise = new Promise((resolve, reject) => {
+    renameWaiter = {resolve, reject};
+  });
+  ipcSend('renameFile', oldPath, newPath);
+  return renamePromise;
+};
+
+ipcOn('fileRenamed', (event, err) => {
+  const {resolve, reject} = renameWaiter;
+  if (err) {
+    reject(err);
+    return;
+  }
+  resolve();
+});
 </script>
 
 <template>
