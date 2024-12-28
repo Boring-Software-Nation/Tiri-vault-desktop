@@ -8,6 +8,7 @@ import express from 'express';
 import { log, sendMessage } from './common';
 import { getTree, isFileTreeReady, readDirectory } from './filetree';
 import tmp from 'tmp';
+import { addProcessingPath } from './filewatcher';
 
 tmp.setGracefulCleanup();
 
@@ -191,7 +192,9 @@ function readNextChunk(id: any, fd: any) {
 
 function writeFile(id: any, fileName: string, buffer: any, bytes, eof) {
   fileName = fileName.replaceAll('..', ''); // simple safety sanitization, improve it as needed
-  fs.open(directory + '/' + fileName, 'w', (err: any, fd: any) => {
+  const fullpath = join(directory, fileName);
+  addProcessingPath(fullpath);
+  fs.open(fullpath, 'w', (err: any, fd: any) => {
     if (err) {
       sendMessage('chunkWritten', id, null);
       return;
@@ -227,7 +230,9 @@ function writeNextChunk(id: any, fd: any, buffer: any, bytes, eof) {
 
 function createDirectory(path: string) {
   path = path.replaceAll('..', ''); // simple safety sanitization, improve it as needed
-  fs.mkdir(directory + '/' + path, { recursive: true },  (err: any) => {
+  const fullpath = join(directory, path);
+  addProcessingPath(fullpath);
+  fs.mkdir(fullpath, { recursive: true },  (err: any) => {
     if (err) {
       sendMessage('mkdir', path, false);
       return;
@@ -237,6 +242,7 @@ function createDirectory(path: string) {
 }
 
 function createTempFile(dir: string) {
+  dir = dir.replaceAll('..', ''); // simple safety sanitization, improve it as needed
   tmp.file({ tmpdir: directory, dir: dir, prefix: 'tdvdl-', postfix: '.tmp' }, (err, path, fd) => {
     if (err) {
       log('Error creating temp file:', err);
@@ -249,7 +255,10 @@ function createTempFile(dir: string) {
 function renameFile(oldPath: string, newPath: string) {
   oldPath = oldPath.replaceAll('..', ''); // simple safety sanitization, improve it as needed
   newPath = newPath.replaceAll('..', ''); // simple safety sanitization, improve it as needed
-  fs.rename(directory + '/' + oldPath, directory + '/' + newPath, (err: any) => {
+  const oldPathFull = join(directory, oldPath);
+  const newPathFull = join(directory, newPath);
+  addProcessingPath(newPathFull);
+  fs.rename(oldPathFull, newPathFull, (err: any) => {
     if (err) {
       log('Error renaming file:', err, oldPath, newPath);
     }

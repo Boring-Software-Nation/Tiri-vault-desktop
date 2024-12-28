@@ -34,6 +34,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "chokidar": "^4.0.3",
     "express": "^4.21.1",
     "tmp": "^0.2.3",
     "tree-model": "^1.0.7"

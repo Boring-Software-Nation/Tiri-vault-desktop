@@ -4,6 +4,7 @@ import { stat, readdir } from 'fs/promises';
 import * as path from 'path';
 import TreeModel from 'tree-model';
 import { log, sendMessage } from './common';
+import { startFileWatcher, stopFileWatcher } from './filewatcher';
 
 const treeModel = new TreeModel();
 let readingDirectory = false;
@@ -60,6 +61,9 @@ type FileTreeNode = {
 let tree:TreeModel.Node<FileTreeNode>|null = null;
 
 export async function readDirectory(directory: string) {
+  await stopFileWatcher();
+  startFileWatcher(directory);
+
   if (readingDirectory) {
     await stopReadingDirectory();
   }
