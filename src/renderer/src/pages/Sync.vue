@@ -437,7 +437,7 @@ const onTreeModelEncrypted = async (encryptedData) => {
     },
     body: JSON.stringify({ tree: base64body, clientId: socket?.id }),
   });
-  console.log('storeLocalTree response:', r);
+  console.log('store TreeModel response:', r);
   const { resolve, reject } = storeTreeWaiter;
   resolve();
 };

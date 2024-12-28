@@ -40,7 +40,7 @@ export function diffTrees(
   function merge(node: TreeModel.Node<FileTreeNode>) {
     console.log('merge:', node);
     if (node.model.name === '/') { // root node
-      merged.model = node.model;
+      Object.assign(merged.model, node.model);
       return;
     }
     const parentPath = node.model.path.split('/').slice(0, -1).join('/');
@@ -53,7 +53,7 @@ export function diffTrees(
     }
     const mergedNode = parentMerged.first(n => n.model.path === node.model.path);
     if (mergedNode) {
-      mergedNode.model = node.model;
+      Object.assign(mergedNode.model, node.model);
     } else {
       parentMerged.addChild(node);
     }
