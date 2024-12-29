@@ -35,12 +35,12 @@ export function diffTrees(
   const remove: FileTreeModel[] = [];
   const localRemove: FileTreeModel[] = [];
   const download: FileTreeModel[] = [];
-  const merged: TreeModel.Node<FileTreeNode> = treeModel.parse<TreeModel.Node<FileTreeNode>>(JSON.parse(JSON.stringify(tree2?.model||{}))); // deep copy of tree2
+  let merged: TreeModel.Node<FileTreeNode> = treeModel.parse<TreeModel.Node<FileTreeNode>>(JSON.parse(JSON.stringify(tree2?.model||{}))); // deep copy of tree2
 
   function merge(node: TreeModel.Node<FileTreeNode>) {
     console.log('merge:', node);
     if (node.model.name === '/') { // root node
-      Object.assign(merged.model, node.model);
+      merged = treeModel.parse<TreeModel.Node<FileTreeNode>>(JSON.parse(JSON.stringify(node.model)));
       return;
     }
     const parentPath = node.model.path.split('/').slice(0, -1).join('/');
@@ -53,7 +53,8 @@ export function diffTrees(
     }
     const mergedNode = parentMerged.first(n => n.model.path === node.model.path);
     if (mergedNode) {
-      Object.assign(mergedNode.model, node.model);
+      mergedNode.drop();
+      parentMerged.addChild(treeModel.parse<TreeModel.Node<FileTreeNode>>(JSON.parse(JSON.stringify(node.model))));
     } else {
       parentMerged.addChild(node);
     }
