@@ -293,7 +293,8 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
   }
   await createFolder('/', '.sync');
 
-  state.messages.push('Uploading files...');
+  if (diff.length > 0)
+    state.messages.push('Uploading files...');
 
   numberOfFiles = 0;
   queue.value = [];
@@ -343,7 +344,8 @@ const onUploadFinished = () => {
 }
 
 const downloadFiles = async (diff:FileTreeModel[]) => {
-  state.messages.push('Downloading files...');
+  if (diff.length > 0)
+    state.messages.push('Downloading files...');
 
   const items:FileTreeModel[] = [];
 
