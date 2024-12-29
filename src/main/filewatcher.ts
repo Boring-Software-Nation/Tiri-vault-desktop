@@ -5,10 +5,11 @@ import { read } from 'fs';
 import { readDirectory } from './filetree';
 
 let watcher: FSWatcher|null = null;
-const processingPaths = new Set<string>();
+const processingPaths = new Map<string, number>();
 
 export function addProcessingPath(p: string) {
-  processingPaths.add(p);
+  const count = processingPaths.get(p) || 0;
+  processingPaths.set(p, count + 1);
 }
 
 export function startFileWatcher(directory: string) {
@@ -26,12 +27,15 @@ export function startFileWatcher(directory: string) {
   });
 
   watcher.on('all', (event, filepath) => {
-    log('file watcher:', event, filepath, processingPaths.has(filepath));
-    if(processingPaths.has(filepath)) {
+    const count = processingPaths.get(filepath) || 0;
+    log('file watcher:', event, filepath, count);
+    if(count == 0) {
+      readDirectory(directory);
+    } else if(count === 1) {
       processingPaths.delete(filepath);
-      return;
+    } else {
+      processingPaths.set(filepath, count - 1);
     }
-    readDirectory(directory);
   });
 }
 

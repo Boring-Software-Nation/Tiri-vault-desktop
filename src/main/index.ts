@@ -95,6 +95,7 @@ app.whenReady().then(() => {
   ipcMain.on('createTempFile', (event, path) => createTempFile(path))
   ipcMain.on('renameFile', (event, oldPath, newPath) => renameFile(oldPath, newPath))
   ipcMain.on('getFileTree', () => getFileTree())
+  ipcMain.on('removeFile', (event, path) => removeFile(path))
 
   createWindow();
 
@@ -263,5 +264,18 @@ function renameFile(oldPath: string, newPath: string) {
       log('Error renaming file:', err, oldPath, newPath);
     }
     sendMessage('fileRenamed', err, oldPath, newPath);
+  });
+}
+
+function removeFile(path: string) {
+  path = path.replaceAll('..', ''); // simple safety sanitization, improve it as needed
+  const fullpath = join(directory, path);
+  addProcessingPath(fullpath);
+  fs.rm(fullpath, { recursive: true, force: true }, (err: any) => {
+    if (err) {
+      sendMessage('fileRemoved', path, false);
+      return;
+    }
+    sendMessage('fileRemoved', path, true);
   });
 }

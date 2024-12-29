@@ -64,14 +64,31 @@ export function diffTrees(
   function compareNodes(node1: FileTreeModel, node2: FileTreeModel) {
     console.log('compareNodes', node1, node2);
     if (!node1 && node2) {
-      // TODO: check for local removing
-      download.push(node2); // Node exists only in tree2
+      // Node exists only in tree2
+      const parentPath = node2.model.path.split('/').slice(0, -1).join('/');
+      const parent2 = tree2?.first(n => n.model.path === parentPath);
+      const parent1 = tree1?.first(n => n.model.path === parentPath);
+      console.log('missed node1 case:', parentPath, parent1, parent2);
+      if (parent1 && parent2 && parent1.model.mtime > parent2.model.mtime) {
+        remove.push(node2);
+        merged.first(n => n.model.path === node2.model.path)?.drop();
+      } else {
+        download.push(node2);
+      }
       return;
     }
     if (node1 && !node2) {
-      // TODO: check for remote removing
-      upload.push(node1); // Node exists only in tree1
-      merge(node1);
+      // Node exists only in tree1
+      const parentPath = node1.model.path.split('/').slice(0, -1).join('/');
+      const parent1 = tree1?.first(n => n.model.path === parentPath);
+      const parent2 = tree2?.first(n => n.model.path === parentPath);
+      console.log('missed node2 case:', parentPath, parent1, parent2);
+      if (parent1 && parent2 && parent1.model.mtime < parent2.model.mtime) {
+        localRemove.push(node1);
+      } else {
+        upload.push(node1);
+        merge(node1);
+      }
       return;
     }
     if (node1 && node2) {

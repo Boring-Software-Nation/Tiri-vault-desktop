@@ -283,7 +283,32 @@ const processTrees = async () => {
   console.log('Download diff:', diffs.download);
   console.log('Merged tree:', diffs.merged);
   state.messages.push('Syncing...');
+  if (diffs.remove.length > 0) {
+    await removeRemoteFiles(diffs.remove);
+  }
   uploadFiles(diffs.upload);
+}
+
+const removeRemoteFiles = async(diff:FileTreeModel[]) => {
+  const deletionPromises = [] as Promise<void>[];
+  diff.forEach((item:FileTreeModel) => {
+    if (!item)
+      return;
+    deletionPromises.push(new Promise(async (resolve, reject) => {
+      const node:FileTreeNode = item.model;
+      state.messages.push(node.type === 'directory' ? `Deleting remote directory: ${node.path}` : `Deleting remote file: ${node.path}`);
+      const path = '.sync/' + node.path + (node.type === 'directory' ? '/' : '');
+      const pathType = node.type === 'directory' ? 'dir' : 'file';
+      await api.objects.objectsDelete2(getCurrentWalletId.value, { query: { pathType, path } } as any);
+      resolve();
+    }));
+  });
+
+  try {
+    await Promise.all(deletionPromises);
+  } catch (error) {
+    console.error('Error deleting remote files:', error);
+  }
 }
 
 const uploadFiles = async (diff:FileTreeModel[]) => {
@@ -333,15 +358,41 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
   }
 }
 
-const onUploadFinished = () => {
+const onUploadFinished = async () => {
 
   if (stopping.value) {
     running.value = false;
     return;
   }
 
+  if (diffs.localRemove.length > 0) {
+    await removeLocalFiles(diffs.localRemove);
+  }
+
   downloadFiles(diffs.download);
 }
+
+const removeWaiters = new Map();
+const removeLocalFiles = async (diff:FileTreeModel[]) => {
+  const deletionPromises = [] as Promise<void>[];
+  diff.forEach((item:FileTreeModel) => {
+    if (!item)
+      return;
+    deletionPromises.push(new Promise(async (resolve, reject) => {
+      const node:FileTreeNode = item.model;
+      state.messages.push(node.type === 'directory' ? `Deleting directory: ${node.path}` : `Deleting file: ${node.path}`);
+      removeWaiters.set(node.path, {resolve, reject});
+      ipcSend('removeFile', node.path);
+    }));
+  });
+
+  await Promise.all(deletionPromises);
+};
+ipcOn('fileRemoved', (event, path, state) => {
+  const {resolve, reject} = removeWaiters.get(path);
+  removeWaiters.delete(path);
+  resolve(state);
+});
 
 const downloadFiles = async (diff:FileTreeModel[]) => {
   if (diff.length > 0)
