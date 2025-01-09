@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CONFIG } from "~/env";
 import { CHUNK_SIZE, crypto_secretstream_xchacha20poly1305_ABYTES } from "~/hat-sh-config/constants";
-import { reactive, computed, onMounted, ref, watchEffect, unref, shallowRef, watch} from "vue";
+import { reactive, computed, onMounted, ref, watchEffect, unref, shallowRef, watch, onUnmounted} from "vue";
 import { storeToRefs } from 'pinia';
 import { userStorage, useUserStore } from '~/store/user';
 import { useWalletsStore } from "~/store/wallet";
@@ -10,9 +10,14 @@ import { decodeUrlSafeBase64ToArrayBuffer, encodeArrayBufferToUrlSafeBase64 } fr
 import { FileDiffs, FileTreeModel, FileTreeNode, diffTrees, parseFileTreeModel } from "~/utils/filetreemodel";
 import getCurrentDir, {storageName} from "~/utils/getCurrentDir";
 import { api } from "@renderer/services";
-import { onMessage, sendMessage } from '~/hat-sh/';
+import { onMessage as _onMessage, offMessage, sendMessage } from '~/hat-sh/';
 import { Buffer } from 'buffer';
 import { io, Socket } from 'socket.io-client';
+
+const state = reactive({
+  directory: '',
+  messages: [] as string[],
+});
 
 const walletStore = useWalletsStore();
 const { allWallets, pushNotification, getSelectedWallet } = walletStore;
@@ -42,36 +47,60 @@ let numberOfFiles: number;
 let privateKey: any, publicKey: any; // not used in current implementation
 
 const ipcSend = (channel, ...args) => window.electron.ipcRenderer.send(channel, ...args);
-const ipcOn = (channel, listener) => window.electron.ipcRenderer.on(channel, listener);
+const ipcCleanups = [] as (()=>void)[];
+const ipcOn = (channel, listener) => ipcCleanups.push( window.electron.ipcRenderer.on(channel, listener) );
+
+const messageHandlers = [] as ((message:any)=>void)[];
+const onMessage = (action, handler) => messageHandlers.push( _onMessage(action, handler) );
+const clearMessageHandlers = () => {
+  messageHandlers.forEach((handler) => offMessage(handler));
+  messageHandlers.splice(0, messageHandlers.length);
+}
 
 onMounted(() => {
   selectedWallet.value = getSelectedWallet.value || null;
 });
+
+onUnmounted(async () => {
+  //console.log('!!! onUnmounted !!!');
+  if (running.value) {
+    await stopSync(StopReason.OTHER);
+  }
+  stopWebsocketClient();
+  state.messages = [];
+  state.directory = '';
+  //console.log('!!! cleanups !!!', ipcCleanups, messageHandlers);
+  ipcCleanups.forEach((cleanFn) => cleanFn());
+  ipcCleanups.splice(0, ipcCleanups.length);
+  clearMessageHandlers();
+  //console.log('!!! onUnmounted done !!!', ipcCleanups, messageHandlers);
+});
+
+let loggedIn = false;
 
 watchEffect(async () => {
   console.log('Current wallet:', currentWallet.value);
   if (!currentWallet.value)
     return;
 
-  if (!user?.value?.token) {
-    await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
-    if (localTree.value) {
-      fetchRemoteTree();
-    }
-  }
-  if (user.value?.token) {
+  if (user.value?.token && loggedIn)
+     return;
+
+  if (user?.value?.token) {
+    loggedIn = true;
+    console.log('>>> starting')
     startWebsocketClient();
+    ipcSend('getDirectory', currentWallet.value.id);
+  } else {
+    await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
   }
+
 });
 
-
-const state = reactive({
-  directory: '',
-  messages: [] as string[],
-});
 
 let socket: Socket|null = null;
 let socketTimeout = 1000;
+let disconnectSocket = false;
 
 const startWebsocketClient = () => {
   if (!CONFIG.WS_URL) {
@@ -81,6 +110,11 @@ const startWebsocketClient = () => {
 
   if (socket) {
     //socket.close();
+    return;
+  }
+
+  if (!user.value?.token) {
+    console.error('No user token for WebSocket connection');
     return;
   }
 
@@ -110,6 +144,10 @@ const startWebsocketClient = () => {
     socket.on('disconnect', () => {
       console.log('Disconnected from WebSocket server');
       socket = null;
+      if (disconnectSocket) {
+        disconnectSocket = false;
+        return;
+      }
       setTimeout(() => {
         startWebsocketClient();
       }, 1000);
@@ -120,10 +158,10 @@ const startWebsocketClient = () => {
       if (data.clientId !== socket?.id) {
         // restart sync
         if (!running.value) {
-          restartSync(false);
+          restartSync();
         } else if (!stopping.value) {
-          await stopSync(false);
-          restartSync(false);
+          await stopSync(StopReason.REMOTE);
+          restartSync();
         }
       } else {
         console.log('Ignoring own message');
@@ -132,10 +170,23 @@ const startWebsocketClient = () => {
   });
 };
 
+const stopWebsocketClient = () => {
+  if (socket) {
+    disconnectSocket = true;
+    socket.close();
+  }
+};
+
+enum StopReason {
+  LOCAL = 'Stopping sync for restart due to local files changed...',
+  REMOTE = 'Stopping sync for restart due to remote files changed...',
+  OTHER = 'Stopping sync...',
+}
+
 let stopWaiter:any;
-const stopSync = async (local:boolean) => {
+const stopSync = async (reason:StopReason) => {
   stopping.value = true;
-  state.messages.push(local ? 'Stopping sync for restart due to local files changed...' : 'Stopping sync for restart due to remote files changed...');
+  state.messages.push(reason);
   const stopPromise = new Promise((resolve, reject) => {
     stopWaiter = {resolve, reject};
   });
@@ -150,9 +201,9 @@ watch(running, async (value) => {
   }
 });
 
-const restartSync = (local:boolean) => {
-  state.messages = [];
-  state.messages.push(local ? 'Restarting sync due to local files changed...' : 'Restarting sync due to remote files changed...');
+const restartSync = () => {
+  //state.messages = [];
+  state.messages.push('Restarting sync due to remote files changed...');
   ipcSend('getFileTree');
 };
 
@@ -163,7 +214,7 @@ ipcOn('directorySelected', async (event, result) => {
   state.directory = result;
 })
 
-ipcSend('getDirectory');
+//ipcSend('getDirectory');
 
 
 const chunkWaiters = new Map();
@@ -205,8 +256,10 @@ ipcOn('replaceMessage', (event, message, oldMessage) => {
 });
 
 ipcOn('filetree', async (event, filetree) => {
-  if (running.value)
-    await stopSync(true);
+  if (running.value) {
+    await stopSync(StopReason.LOCAL);
+    state.messages.push('Restarting sync due to local files changed...');
+  }
   running.value = true;
 
   //console.log('Filetree:', filetree);

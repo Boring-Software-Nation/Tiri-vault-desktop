@@ -23,16 +23,22 @@ if (!(is.dev && process.env['ELECTRON_RENDERER_URL'])) {
 }
 
 type StoreType = {
-  syncDirectory?: string
+  //syncDirectory?: string
+  directories: { [key: string]: string }
 };
 
 // is.dev = true; // FIXME: don't forget to remove this line for release build
 
 const FILE_CHUNK_SIZE = 32 * 1024 * 1024;
 
-const store = new Store<StoreType>() as any; // store typed as any to avoid TS error
+const store = new Store<StoreType>({
+  defaults: {
+    directories: {}
+  }
+}) as any; // store typed as any to avoid TS error
 
-let directory:string = store.get('syncDirectory')||'';
+let directory:string = ''; //store.get('syncDirectory')||'';
+let currentWalletId:string = '';
 
 function createWindow(): void {
   // Create the browser window.
@@ -86,7 +92,7 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('chooseDirectory', () => chooseDirectory())
   ipcMain.on('openDirectory', () => openDirectory())
-  ipcMain.on('getDirectory', () => getDirectory());
+  ipcMain.on('getDirectory', (event, walletId) => getDirectory(walletId));
   ipcMain.on('readFile', (event, id, fileName) => readFile(id, fileName))
   ipcMain.on('readNextChunk', (event, id, fd) => readNextChunk(id, fd))
   ipcMain.on('writeFile', (event, id, fileName, buffer, bytes, eof) => writeFile(id, fileName, buffer, bytes, eof))
@@ -118,13 +124,15 @@ app.on('window-all-closed', () => {
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
 
-function getDirectory() {
+function getDirectory(walletId: string) {
+  currentWalletId = walletId;
+  directory = store.get('directories')[walletId];
   sendMessage('directorySelected', directory);
   if (directory) {
-    if (isFileTreeReady())
-      sendMessage('filetree', getTree()?.model)
-    else
-      readDirectory(directory);
+    // if (isFileTreeReady())
+    //   sendMessage('filetree', getTree()?.model)
+    // else
+    readDirectory(directory);
   }
 }
 
@@ -138,7 +146,8 @@ function chooseDirectory() {
         return;
       }
       directory = result.filePaths[0];
-      store.set('syncDirectory', directory);
+      //store.set('syncDirectory', directory);
+      store.set(`directories.${currentWalletId}`, directory);
       sendMessage('directorySelected', result.filePaths[0]);
       readDirectory(directory);
     })

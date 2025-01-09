@@ -25,11 +25,17 @@ export async function sendMessage(id: string, data: any[], target: string) {
 
 export function onMessage(id: string, callback: (message: any) => void) {
   console.log('Listening for message from service worker:', id);
-  navigator.serviceWorker.addEventListener('message', event => {
+  const handler = (event: MessageEvent) => {
     console.log('Received event:', event.data, event);
     if (event.data.id == id)
       callback(event.data);
     else if (event.data.reply)
       callback({ id: id, data: [ event.data.reply ] });
-  });
+  };
+  navigator.serviceWorker.addEventListener('message', handler);
+  return handler;
+}
+
+export function offMessage(handler: (event: MessageEvent) => void) {
+  navigator.serviceWorker.removeEventListener('message', handler);
 }

@@ -242,6 +242,7 @@ let wallet = reactive({
 })
 
 const userStore = useUserStore();
+const {setWasLogout} = userStore
 const store = useWalletsStore()
 const {pushNotification, getSetupStep, lockWallets, createWallet, deleteWallet, queueWallet, setSetup} = store
 
@@ -429,9 +430,10 @@ const saveWallet = async () => {
 
 const onWalletCreated = async () => {
   try {
-    setSetup(true);
+    await setSetup(true);
+    setWasLogout(false);
 
-    await routerPush('wallets')
+    await routerPush('home')
   } catch (ex: any) {
     console.error('onWalletCreated', ex);
     pushNotification({
