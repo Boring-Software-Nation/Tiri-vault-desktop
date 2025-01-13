@@ -292,7 +292,7 @@ const fetchRemoteTree = async () => {
     //console.log('Text:', t);
     const j = await r.json();
     //console.log('JSON:', j);
-    const s = String.fromCodePoint(...j.data)
+    const s = new TextDecoder().decode(Uint8Array.from(j.data))
     //console.log('String:', s);
     encodedTree = JSON.parse(s);
     //console.log('Encoded tree:', encodedTree);
@@ -738,7 +738,7 @@ onMessage('hat-sh-buffer', async (message) => {
       onTreeModelEncrypted(data);
       break;
     case 'bufferDecrypted':
-      onRemoteTreeDecrypted(String.fromCodePoint(...data));
+      onRemoteTreeDecrypted(new TextDecoder().decode(data));
       break;
     }
 });
