@@ -1,4 +1,4 @@
-import { app, shell, dialog, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, dialog, BrowserWindow, ipcMain, nativeImage, Tray, Menu } from 'electron'
 import { join, relative } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -40,7 +40,7 @@ const store = new Store<StoreType>({
 let directory:string = ''; //store.get('syncDirectory')||'';
 let currentWalletId:string = '';
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
@@ -73,6 +73,8 @@ function createWindow(): void {
     //mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
     mainWindow.loadURL(`http://localhost:${PORT}/index.html`)
   }
+
+  return mainWindow;
 }
 
 // This method will be called when Electron has finished
@@ -103,13 +105,50 @@ app.whenReady().then(() => {
   ipcMain.on('getFileTree', () => getFileTree())
   ipcMain.on('removeFile', (event, path) => removeFile(path))
 
-  createWindow();
+  const mainWindow = createWindow();
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  let isQuiting = false;
+
+  const trayIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'));
+  const tray = new Tray(trayIcon);
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Open Tiri Vault Desktop',
+      click: () => {
+        mainWindow.show();
+      },
+    },
+    {
+      label: 'Quit',
+      click: () => {
+        isQuiting = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setToolTip('Tiri Vault Desktop');
+  tray.setContextMenu(contextMenu);
+
+  // Minimize to tray when the window is closed
+  mainWindow.on('close', (event) => {
+    if (!isQuiting) {
+      event.preventDefault(); // Prevent the default close behavior
+      mainWindow.hide(); // Hide the window instead of closing it
+    }
+  });
+
+  // Show the window again when the tray icon is clicked
+  tray.on('click', () => {
+    mainWindow.show();
+  });
+
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
