@@ -272,7 +272,7 @@ watchEffect(async () => {
     if (r.files.length === 0) {
       await createFolder('', '');
     }
-    emitter.emit('vf-fetch', {params: {q: 'index', path:'/', adapter: (adapter.value)}});
+    emitter.emit('vf-fetch', {params: {q: 'index', path:'/.sync', adapter: (adapter.value)}});
   } else {
     await loginOrRegisterUser(getCurrentWalletId.value, user?.value.unlockPassword);
   }
