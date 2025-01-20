@@ -10,6 +10,12 @@ import { getTree, isFileTreeReady, readDirectory } from './filetree';
 import tmp from 'tmp';
 import { addProcessingPath } from './filewatcher';
 
+const lock = app.requestSingleInstanceLock();
+
+if (!lock) {
+  app.exit(1);
+}
+
 tmp.setGracefulCleanup();
 
 const PORT = 5174;
@@ -149,6 +155,14 @@ app.whenReady().then(() => {
     mainWindow.show();
   });
 
+
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+    }
+  });
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
