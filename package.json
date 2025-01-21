@@ -9,7 +9,11 @@
     "asar": true,
     "win": {
       "icon": "./build/icon.png",
-      "artifactName": "TiriVD Setup ${version}.${ext}"
+      "artifactName": "TiriVD Setup ${version}.${ext}",
+      "target": "nsis"
+    },
+    "nsis": {
+      "include": "./build/installer.nsh"
     },
     "mac": {
       "icon": "./build/icon.png",

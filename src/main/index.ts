@@ -12,8 +12,8 @@ import { addProcessingPath } from './filewatcher';
 
 const lock = app.requestSingleInstanceLock();
 
-if (!lock) {
-  app.exit(1);
+if (!lock || process.argv.includes('--quit')) {
+  app.exit();
 }
 
 tmp.setGracefulCleanup();
@@ -119,7 +119,7 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 
-  let isQuiting = false;
+  let isQuitting = false;
 
   const trayIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'));
   const tray = new Tray(trayIcon);
@@ -133,7 +133,6 @@ app.whenReady().then(() => {
     {
       label: 'Quit',
       click: () => {
-        isQuiting = true;
         app.quit();
       },
     },
@@ -144,7 +143,7 @@ app.whenReady().then(() => {
 
   // Minimize to tray when the window is closed
   mainWindow.on('close', (event) => {
-    if (!isQuiting) {
+    if (!isQuitting) {
       event.preventDefault(); // Prevent the default close behavior
       mainWindow.hide(); // Hide the window instead of closing it
     }
@@ -155,9 +154,14 @@ app.whenReady().then(() => {
     mainWindow.show();
   });
 
+  app.on('before-quit', () => {
+    isQuitting = true;
+  });
 
-  app.on('second-instance', () => {
-    if (mainWindow) {
+  app.on('second-instance', (event, argv) => {
+    if (argv.includes('--quit')) {
+      app.quit();
+    } else if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       if (!mainWindow.isVisible()) mainWindow.show();
       mainWindow.focus();
