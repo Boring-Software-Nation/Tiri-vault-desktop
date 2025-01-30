@@ -1010,9 +1010,11 @@ ipcOn('fileRenamed', (event, err) => {
   display: flex;
   flex-direction: column;
   padding: 20px 10px 20px 20px;
-  width: 100%;
+  width: calc(100% - 10px);
   height: 100%;
   box-sizing: border-box;
+  position: relative;
+  left: 10px;
 }
 
 .actions {
@@ -1051,7 +1053,7 @@ ipcOn('fileRenamed', (event, err) => {
 .directory {
   width: 100%;
   padding: 10px 20px 14px 20px;
-  border-radius: 5px;
+  border-radius: 30px;
   border: 5px solid #E3CCA9;
   background: #8AA8AC;
   overflow: hidden;
