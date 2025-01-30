@@ -115,8 +115,13 @@ const forgotPassword = () => {
 
 .page-unlock {
   position: fixed;
-  background: bg-dark;
+  background: bg;
   z-index: 99;
+}
+body.dark {
+  .page-unlock {
+    background: bg-dark;
+  }
 }
 
 h2, p {

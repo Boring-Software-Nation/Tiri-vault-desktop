@@ -39,9 +39,15 @@ onMounted(() => {
   grid-gap: 15px;
   padding: 40px 15px;
   align-content: safe center;
-  background: bg-dark-accent;
+  background: bg-accent;
   overflow: hidden;
   z-index: 99;
+}
+
+body.dark {
+  .page-modal {
+    background: bg-dark-accent;
+  }
 }
 
 h2 {

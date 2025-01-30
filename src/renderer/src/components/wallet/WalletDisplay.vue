@@ -576,7 +576,7 @@ const copyToClipboard = async () => {
     position: absolute;
     top: calc(100% + 20px);
     right: 0;
-    background: bg-dark-accent;
+    background: bg-accent;
     border-radius: 4px;
     border-top-right-radius: 0;
     z-index: 99;
@@ -616,6 +616,14 @@ const copyToClipboard = async () => {
       &:hover, &:active, &:focus {
         color: primary;
       }
+    }
+  }
+}
+
+body.dark {
+  .wallet-more-btn {
+    .dropdown {
+      background: bg-accent-dark;
     }
   }
 }

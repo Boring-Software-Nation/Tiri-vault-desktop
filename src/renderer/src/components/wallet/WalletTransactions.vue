@@ -194,7 +194,7 @@ const onSelectTransaction = (id) => {
 
 .wallet-transactions {
   height: 100%;
-  border-top: 1px solid bg-dark-accent;
+  border-top: 1px solid bg-accent;
   //overflow-x: hidden;
   //overflow-y: auto;
 
@@ -206,7 +206,7 @@ const onSelectTransaction = (id) => {
       top: 0;
       padding: 15px;
       color: primary;
-      background: bg-dark;
+      background: bg;
       text-align: left;
       z-index: 5;
     }
@@ -234,15 +234,15 @@ const onSelectTransaction = (id) => {
 
     tr {
       color: rgba(255, 255, 255, 0.54);
-      background: bg-dark;
+      background: bg;
 
       td {
-        border-bottom: 1px solid bg-dark-accent;
+        border-bottom: 1px solid bg-accent;
         padding: 15px;
       }
 
       &:hover, &:focus, &:active {
-        background: bg-dark-accent;
+        background: bg-accent;
         cursor: pointer;
       }
     }
@@ -273,6 +273,25 @@ const onSelectTransaction = (id) => {
       grid-column: 1 / -1;
       color: rgba(255, 255, 255, 0.54);
       font-size: 1.1rem;
+    }
+  }
+}
+body.dark {
+  .wallet-transactions {
+    border-top: 1px solid bg-dark-accent;
+    .transactions-grid {
+      .group-date td {
+        background: bg-dark;
+      }
+      tr {
+        background: bg-dark;
+        td {
+          border-bottom: 1px solid bg-dark-accent;
+        }
+        &:hover, &:focus, &:active {
+          background: bg-dark-accent;
+        }
+      }
     }
   }
 }
