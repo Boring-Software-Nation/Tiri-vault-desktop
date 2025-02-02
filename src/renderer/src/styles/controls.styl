@@ -1,7 +1,8 @@
 label {
 	display: block;
 	width: 100%;
-	color: rgba(255, 255, 255, 0.54);
+	/*color: rgba(255, 255, 255, 0.54);*/
+	color: #000;
 	font-size: 0.9rem;
 	margin-bottom: 5px;
 	transition: all 0.3s linear;
@@ -96,9 +97,12 @@ label {
 		&:checked {
 			+ label {
 				&:before {
-					border-color: primary;
+					border-radius: 2px;
+					border: 3px solid #D06B57;
+					background: #E4B858;
 				}
 
+				/*
 				&:after {
 					position: absolute;
 					display: inline-block;
@@ -108,7 +112,15 @@ label {
 					width: 12px;
 					height: 12px;
 					background: primary;
-					border-radius: 4px;
+					border-radius: 2px;
+				}
+				*/
+
+				+ .checkmark {
+					display: inline-block;
+					position: absolute;
+					top: 4px;
+					left: 2px;
 				}
 			}
 		}
@@ -121,8 +133,13 @@ label {
 			min-height: 24px;
 			padding-left: 28px;
 			padding-top: 1px;
-			color: rgba(0, 0, 0, 0.54);
-			font-size: 1rem;
+
+			color: #5E7676;
+			font-size: 14px;
+			font-style: normal;
+			font-weight: 400;
+			line-height: 20px; /* 142.857% */
+			letter-spacing: 0.25px;
 
 			&::before {
 				position: absolute;
@@ -132,8 +149,12 @@ label {
 				top: 3px;
 				width: 18px;
 				height: 18px;
-				border: 1px solid #CCC;
-				border-radius: 4px;
+				border-radius: 2px;
+				border: 3px solid #E4B858;
+			}
+
+			+ .checkmark {
+				display: none;
 			}
 		}
 	}

@@ -1,8 +1,8 @@
 <template>
   <div class="page page-setup">
     <div v-if="setupMode === 'default' && (step === 'choose' || step === 'create' || step === 'review')" class="back-btn absolute left-[24px] top-[24px] cursor-pointer" @click.prevent="stepBackward">
-      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 13 13" fill="none">
-        <path d="M13 5.6875H3.11188L7.65375 1.14562L6.5 0L0 6.5L6.5 13L7.64563 11.8544L3.11188 7.3125H13V5.6875Z" fill="#19CF86"/>
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <path d="M39 20C39 19.6516 39 19.4775 38.9784 19.3315C38.8491 18.4601 38.1649 17.7759 37.2935 17.6466C37.1475 17.625 36.9734 17.625 36.625 17.625H19.7531C15.6432 17.625 13.5883 17.625 13.0769 16.3904C12.5655 15.1557 14.0186 13.7027 16.9247 10.7966L21.6862 6.03501C21.9342 5.78703 22.0582 5.66305 22.1465 5.54379C22.6715 4.83467 22.6698 3.86531 22.1423 3.15805C22.0536 3.03911 21.9291 2.91556 21.6803 2.66846C21.433 2.42292 21.3094 2.30016 21.1904 2.2126C20.4832 1.69217 19.5193 1.69387 18.8139 2.2168C18.6952 2.30477 18.572 2.42798 18.3256 2.67439L3.82843 17.1716C2.49509 18.5049 1.82843 19.1716 1.82843 20C1.82843 20.8284 2.49509 21.4951 3.82843 22.8284L18.3249 37.3249C18.5672 37.5672 18.6884 37.6884 18.8048 37.7752C19.514 38.3037 20.486 38.3037 21.1952 37.7752C21.3116 37.6884 21.4328 37.5672 21.6751 37.3249C21.9173 37.0827 22.0384 36.9616 22.1251 36.8453C22.6534 36.1366 22.6538 35.1652 22.1262 34.4561C22.0396 34.3397 21.9186 34.2185 21.6766 33.9761L16.9099 29.2009C14.0096 26.2954 12.5594 24.8426 13.0712 23.6088C13.5829 22.375 15.6355 22.375 19.7409 22.375H36.625C36.9734 22.375 37.1475 22.375 37.2935 22.3534C38.1649 22.2241 38.8491 21.5399 38.9784 20.6685C39 20.5225 39 20.3484 39 20Z" fill="#568BA4" stroke="#D06B57" stroke-width="2" stroke-linejoin="round"/>
       </svg>
     </div>
     <div class="setup-step" v-if="step === 'password'">
@@ -91,33 +91,33 @@
       </div>
     </div>
     <div class="wallet-step wallet-mode" v-if="step === 'choose'" key="pickMode">
-      <div class="create-wallet-button fill-[#D0BCFF] hover:fill-[#77FF85] text-[#D0BCFF] hover:text-[#77FF85]" @click="onClickWalletType('create')">
+      <div class="create-wallet-button" @click="onClickWalletType('create')">
         <div class="button-icon flex justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
-            <path d="M25 4.16675C13.4937 4.16675 4.16663 13.4938 4.16663 25.0001C4.16663 36.5063 13.4937 45.8334 25 45.8334C36.5062 45.8334 45.8333 36.5063 45.8333 25.0001C45.8333 13.4938 36.5062 4.16675 25 4.16675ZM35.4166 27.0834H27.0833V35.4167H22.9166V27.0834H14.5833V22.9167H22.9166V14.5834H27.0833V22.9167H35.4166V27.0834Z" fill="currentFill"/>
+            <path d="M24.9998 4.16667C13.4936 4.16667 4.1665 13.4938 4.1665 25C4.1665 36.5063 13.4936 45.8333 24.9998 45.8333C36.5061 45.8333 45.8332 36.5063 45.8332 25C45.8332 13.4938 36.5061 4.16667 24.9998 4.16667ZM35.4165 25C35.4165 25.0774 35.4165 25.1161 35.4154 25.1488C35.381 26.202 34.5352 27.0478 33.4819 27.0823C33.4492 27.0833 33.4105 27.0833 33.3332 27.0833H31.0832C29.1976 27.0833 28.2547 27.0833 27.669 27.6691C27.0832 28.2549 27.0832 29.1977 27.0832 31.0833V33.3333C27.0832 33.4107 27.0832 33.4494 27.0821 33.4821C27.0476 34.5353 26.2018 35.3811 25.1486 35.4156C25.1159 35.4167 25.0772 35.4167 24.9998 35.4167C24.9225 35.4167 24.8838 35.4167 24.8511 35.4156C23.7978 35.3811 22.9521 34.5353 22.9176 33.4821C22.9165 33.4494 22.9165 33.4107 22.9165 33.3333V31.0833C22.9165 29.1977 22.9165 28.2549 22.3307 27.6691C21.7449 27.0833 20.8021 27.0833 18.9165 27.0833H16.6665C16.5891 27.0833 16.5504 27.0833 16.5177 27.0823C15.4645 27.0478 14.6187 26.202 14.5842 25.1488C14.5832 25.1161 14.5832 25.0774 14.5832 25C14.5832 24.9226 14.5832 24.8839 14.5842 24.8512C14.6187 23.798 15.4645 22.9522 16.5177 22.9177C16.5504 22.9167 16.5891 22.9167 16.6665 22.9167H18.9165C20.8021 22.9167 21.7449 22.9167 22.3307 22.3309C22.9165 21.7451 22.9165 20.8023 22.9165 18.9167V16.6667C22.9165 16.5893 22.9165 16.5506 22.9176 16.5179C22.9521 15.4647 23.7978 14.6189 24.8511 14.5844C24.8838 14.5833 24.9225 14.5833 24.9998 14.5833C25.0772 14.5833 25.1159 14.5833 25.1486 14.5844C26.2018 14.6189 27.0476 15.4647 27.0821 16.5179C27.0832 16.5506 27.0832 16.5893 27.0832 16.6667V18.9167C27.0832 20.8023 27.0832 21.7451 27.669 22.3309C28.2547 22.9167 29.1976 22.9167 31.0832 22.9167H33.3332C33.4105 22.9167 33.4492 22.9167 33.4819 22.9177C34.5352 22.9522 35.381 23.798 35.4154 24.8512C35.4165 24.8839 35.4165 24.9226 35.4165 25Z" fill="currentFill"/>
           </svg>
         </div>
-        <div class="button-title text-[16px] font-[Roboto]">{{ "New Wallet" }}</div>
-        <p class="text-[14px] text-[#D9D9D9] font-[Roboto] text-center">{{ "Make a new SIA wallet for your Tiri vault." }}</p>
+        <div class="button-title">{{ "New Wallet" }}</div>
+        <p>{{ "Make a new SIA wallet for your Tiri vault." }}</p>
       </div>
-      <div class="create-wallet-button fill-[#D0BCFF] hover:fill-[#77FF85] text-[#D0BCFF] hover:text-[#77FF85]" @click="onClickWalletType('recover')">
+      <div class="create-wallet-button recover-wallet-button" @click="onClickWalletType('recover')">
         <div class="button-icon flex justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
-            <path d="M45.8333 45.8333L39.7094 39.7094C43.4869 35.9411 45.8333 30.7443 45.8333 24.9999C45.8333 13.5124 36.4874 4.16659 24.9999 4.16659C13.5124 4.16659 4.16659 13.5124 4.16659 24.9999C4.16659 36.4874 13.5124 45.8333 24.9999 45.8333V41.6666C15.8103 41.6666 8.33325 34.1895 8.33325 24.9999C8.33325 15.8103 15.8103 8.33325 24.9999 8.33325C34.1895 8.33325 41.6666 15.8103 41.6666 24.9999C41.6666 29.5957 39.7906 33.7556 36.7716 36.7716L31.2499 31.2499V45.8333H45.8333Z" fill="currentFill"/>
+            <path d="M41.0051 46.8333C41.0311 46.8333 41.0571 46.8333 41.0829 46.8333C42.0438 46.8334 42.8726 46.8334 43.4888 46.7463C44.0826 46.6624 44.9178 46.4418 45.267 45.5987C45.6163 44.7556 45.1816 44.0091 44.8212 43.5298C44.447 43.0325 43.8609 42.4464 43.1815 41.7671C43.1632 41.7488 43.1448 41.7304 43.1264 41.712L41.8327 40.4183C41.4883 40.074 41.2961 39.8792 41.1772 39.7273C41.1738 39.7228 41.1705 39.7186 41.1674 39.7145C41.1735 39.7045 41.1804 39.6937 41.188 39.6819C41.3049 39.5025 41.4969 39.2682 41.8283 38.8679C44.9496 35.0989 46.8335 30.2688 46.8335 25C46.8335 12.9602 37.0399 3.16666 25.0002 3.16666C12.9604 3.16666 3.16683 12.9602 3.16683 25C3.16683 36.3345 11.8456 45.6766 22.9073 46.7338C22.9264 46.7356 22.9456 46.7375 22.9648 46.7393C23.362 46.7774 23.7662 46.8162 24.1102 46.7956C24.5191 46.7712 24.9598 46.6596 25.3454 46.3091C25.742 45.9486 25.8885 45.5015 25.9485 45.0954C26.0004 44.7443 26.0003 44.3201 26.0002 43.8913C26.0002 43.872 26.0002 43.8527 26.0002 43.8333V43.6667L26.0002 43.6168C26.0002 43.2027 26.0003 42.808 25.9616 42.4838C25.9193 42.1289 25.8168 41.7083 25.4962 41.347C25.1645 40.9732 24.7322 40.8253 24.3816 40.7436C24.0471 40.6656 23.6271 40.6153 23.172 40.5608L23.1229 40.5549C15.3669 39.6248 9.3335 33.0013 9.3335 25C9.3335 16.3627 16.3629 9.33333 25.0002 9.33333C33.6375 9.33333 40.6668 16.3627 40.6668 25C40.6668 28.6446 39.4122 31.9964 37.3137 34.6595C37.1735 34.8374 37.0635 34.9769 36.9654 35.0939C36.8793 35.1965 36.8164 35.2648 36.7681 35.3114C36.6176 35.1995 36.4242 35.0098 36.0654 34.651L35.3715 33.9571L35.3164 33.902C34.6371 33.2226 34.051 32.6364 33.5537 32.2623C33.0744 31.9019 32.3279 31.4672 31.4848 31.8165C30.6417 32.1657 30.4211 33.0009 30.3372 33.5947C30.25 34.2109 30.2501 35.0397 30.2502 36.0006L30.2502 36.0784V43.8333C30.2502 43.8515 30.2502 43.8696 30.2502 43.8877C30.2501 44.3118 30.25 44.7239 30.2957 45.0638C30.3472 45.4471 30.4727 45.8843 30.8359 46.2475C31.1992 46.6108 31.6364 46.7363 32.0196 46.7878C32.3596 46.8335 32.7717 46.8334 33.1958 46.8333C33.2139 46.8333 33.232 46.8333 33.2502 46.8333H41.0051Z" fill="currentFill"/>
           </svg>
         </div>
-        <div class="button-title text-[16px] font-[Roboto]">{{ "Recover Wallet" }}</div>
-        <p class="text-[14px] text-[#D9D9D9] font-[Roboto] text-center">{{ "Recover an existing SIA wallet to use with your Tiri vault." }}</p>
+        <div class="button-title">{{ "Recover Wallet" }}</div>
+        <p>{{ "Recover an existing SIA wallet to use with your Tiri vault." }}</p>
       </div>
     </div>
     <div class="setup-step" v-if="step ==='create'">
       <div>
-      <div class="w-[60px] h-[60px] mx-auto">
-        <svg xmlns="http://www.w3.org/2000/svg" width="61" height="60" viewBox="0 0 61 60" fill="none">
-          <path d="M55.5 55L48.1514 47.6514C52.6843 43.1295 55.5 36.8932 55.5 30C55.5 16.215 44.285 5 30.5 5C16.715 5 5.5 16.215 5.5 30C5.5 43.785 16.715 55 30.5 55V50C19.4725 50 10.5 41.0275 10.5 30C10.5 18.9725 19.4725 10 30.5 10C41.5275 10 50.5 18.9725 50.5 30C50.5 35.515 48.2488 40.5068 44.626 44.126L38 37.5V55H55.5Z" fill="#19CF86"/>
-        </svg>
-      </div>
-      <h2 class="text-center text-[12px] text-emerald-500 font-normal font-['Roboto'] leading-[20px] tracking-tight pt-[5px]">{{ captionRecover }}</h2>
+        <div class="w-[60px] h-[60px] mx-auto">
+          <svg xmlns="http://www.w3.org/2000/svg" width="61" height="60" viewBox="0 0 61 60" fill="none">
+            <path d="M50.6716 56C50.6976 56 50.7236 56 50.7494 56C51.7103 56.0001 52.5391 56.0001 53.1553 55.913C53.7491 55.829 54.5843 55.6085 54.9335 54.7654C55.2828 53.9223 54.8481 53.1757 54.4877 52.6965C54.1135 52.1992 53.5274 51.6131 52.848 50.9337C52.8297 50.9154 52.8113 50.8971 52.7929 50.8787L50.2744 48.3602C49.9284 48.0142 49.7359 47.8191 49.6174 47.6669C49.6142 47.6629 49.6112 47.659 49.6083 47.6552C49.6138 47.6466 49.6198 47.6374 49.6265 47.6275C49.7436 47.4526 49.9361 47.2249 50.2717 46.8325C54.1487 42.2992 56.5 36.4235 56.5 30C56.5 15.6627 44.8373 4 30.5 4C16.1627 4 4.5 15.6627 4.5 30C4.5 43.6381 15.052 54.8547 28.4211 55.9177C28.4401 55.9192 28.4591 55.9207 28.4781 55.9222C28.8804 55.9543 29.2863 55.9867 29.6297 55.962C30.0344 55.9329 30.4748 55.8194 30.857 55.4663C31.2481 55.1051 31.3909 54.6594 31.4494 54.2572C31.5002 53.9079 31.5001 53.4856 31.5 53.0574L31.5 53V52L31.5 51.9493C31.5001 51.5333 31.5001 51.1354 31.4603 50.8084C31.4166 50.4488 31.3104 50.0251 30.9826 49.663C30.6454 49.2906 30.2123 49.1468 29.8562 49.0699C29.5208 48.9974 29.102 48.9557 28.652 48.911L28.602 48.906C19.0143 47.951 11.5 39.8341 11.5 30C11.5 19.5248 20.0248 11 30.5 11C40.9752 11 49.5 19.5248 49.5 30C49.5 34.5563 47.883 38.7359 45.1952 42.0114C44.9031 42.3674 44.7466 42.5539 44.6236 42.6673C44.4725 42.5547 44.2785 42.3643 43.9196 42.0054L42.1213 40.2071L42.0663 40.152C41.3869 39.4726 40.8008 38.8865 40.3035 38.5123C39.8243 38.1519 39.0777 37.7172 38.2346 38.0665C37.3915 38.4157 37.171 39.2509 37.087 39.8447C36.9999 40.4609 36.9999 41.2897 37 42.2505L37 42.3284V53C37 53.0181 37 53.0363 37 53.0544C36.9999 53.4785 36.9998 53.8906 37.0455 54.2305C37.097 54.6137 37.2226 55.051 37.5858 55.4142C37.949 55.7774 38.3863 55.903 38.7695 55.9545C39.1094 56.0002 39.5215 56.0001 39.9456 56C39.9637 56 39.9818 56 40 56H50.6716Z" fill="#D06B57" stroke="#E4B858" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="text-center text-[12px] text-emerald-500 font-normal  leading-[20px] tracking-tight pt-[5px]">{{ captionRecover }}</h2>
       </div>
       <div v-if="false" class="control">
         <label>{{ "Wallet Name" }}</label>
@@ -125,38 +125,39 @@
       </div>
 
       <template v-if="createType === 'recover'">
-        <div class="control">
-          <label>{{ "Input your recovery Seed" }}</label>
-          <textarea class="!border-[#938F99]" v-model="recoverySeed"/>
+        <p class="description">{{ "After entering the recovery seed phrase, you will restore access to your SIA wallet and the Tiri vault connected to it. Before proceeding, make sure you are using the correct seed phrase for recovery." }}</p>
+        <div class="control recover">
+          <label>{{ "Enter your recovery seed" }}</label>
+          <textarea v-model="recoverySeed"/>
         </div>
       </template>
       <div class="buttons">
-        <button class="btn btn-success btn-inline text-[Roboto]"
-                @click="onCreateWallet" :disabled="creating">{{ createType === 'recover' ? ( setupMode === 'forgot-password' ? 'Next' : 'Recover') : 'Generate' }}
+        <button class="btn btn-success btn-inline"
+                @click="onCreateWallet" :disabled="creating">{{ createType === 'recover' ? ( setupMode === 'forgot-password' ? 'Next' : 'Next') : 'Generate' }}
         </button>
       </div>
     </div>
     <div class="wallet-step"  v-if="step ==='review'">
       <div>
-      <div class="mx-auto  w-[60px] h-[60px]">
-        <svg xmlns="http://www.w3.org/2000/svg" width="61" height="60" viewBox="0 0 61 60" fill="none">
-          <path d="M55.5 55L48.1514 47.6514C52.6843 43.1295 55.5 36.8932 55.5 30C55.5 16.215 44.285 5 30.5 5C16.715 5 5.5 16.215 5.5 30C5.5 43.785 16.715 55 30.5 55V50C19.4725 50 10.5 41.0275 10.5 30C10.5 18.9725 19.4725 10 30.5 10C41.5275 10 50.5 18.9725 50.5 30C50.5 35.515 48.2488 40.5068 44.626 44.126L38 37.5V55H55.5Z" fill="#19CF86"/>
-        </svg>
-      </div>
-      <h2 class="text-center text-[12px] text-emerald-500 font-normal font-['Roboto'] leading-[20px] tracking-tight pt-[5px] pb-3">{{ 'Review' }}</h2>
+        <div class="mx-auto  w-[60px] h-[60px]">
+          <svg xmlns="http://www.w3.org/2000/svg" width="61" height="60" viewBox="0 0 61 60" fill="none">
+            <path d="M50.6716 56C50.6976 56 50.7236 56 50.7494 56C51.7103 56.0001 52.5391 56.0001 53.1553 55.913C53.7491 55.829 54.5843 55.6085 54.9335 54.7654C55.2828 53.9223 54.8481 53.1757 54.4877 52.6965C54.1135 52.1992 53.5274 51.6131 52.848 50.9337C52.8297 50.9154 52.8113 50.8971 52.7929 50.8787L50.2744 48.3602C49.9284 48.0142 49.7359 47.8191 49.6174 47.6669C49.6142 47.6629 49.6112 47.659 49.6083 47.6552C49.6138 47.6466 49.6198 47.6374 49.6265 47.6275C49.7436 47.4526 49.9361 47.2249 50.2717 46.8325C54.1487 42.2992 56.5 36.4235 56.5 30C56.5 15.6627 44.8373 4 30.5 4C16.1627 4 4.5 15.6627 4.5 30C4.5 43.6381 15.052 54.8547 28.4211 55.9177C28.4401 55.9192 28.4591 55.9207 28.4781 55.9222C28.8804 55.9543 29.2863 55.9867 29.6297 55.962C30.0344 55.9329 30.4748 55.8194 30.857 55.4663C31.2481 55.1051 31.3909 54.6594 31.4494 54.2572C31.5002 53.9079 31.5001 53.4856 31.5 53.0574L31.5 53V52L31.5 51.9493C31.5001 51.5333 31.5001 51.1354 31.4603 50.8084C31.4166 50.4488 31.3104 50.0251 30.9826 49.663C30.6454 49.2906 30.2123 49.1468 29.8562 49.0699C29.5208 48.9974 29.102 48.9557 28.652 48.911L28.602 48.906C19.0143 47.951 11.5 39.8341 11.5 30C11.5 19.5248 20.0248 11 30.5 11C40.9752 11 49.5 19.5248 49.5 30C49.5 34.5563 47.883 38.7359 45.1952 42.0114C44.9031 42.3674 44.7466 42.5539 44.6236 42.6673C44.4725 42.5547 44.2785 42.3643 43.9196 42.0054L42.1213 40.2071L42.0663 40.152C41.3869 39.4726 40.8008 38.8865 40.3035 38.5123C39.8243 38.1519 39.0777 37.7172 38.2346 38.0665C37.3915 38.4157 37.171 39.2509 37.087 39.8447C36.9999 40.4609 36.9999 41.2897 37 42.2505L37 42.3284V53C37 53.0181 37 53.0363 37 53.0544C36.9999 53.4785 36.9998 53.8906 37.0455 54.2305C37.097 54.6137 37.2226 55.051 37.5858 55.4142C37.949 55.7774 38.3863 55.903 38.7695 55.9545C39.1094 56.0002 39.5215 56.0001 39.9456 56C39.9637 56 39.9818 56 40 56H50.6716Z" fill="#D06B57" stroke="#E4B858" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2>{{ 'Review' }}</h2>
       </div>
 
-      <p v-if="createType === 'recover'" class="text-[14px] text-[#D9D9D9] font-[Roboto] leading-[20px]">Your wallet has been successfully recovered. The blockchain is now being
+      <p class="description" v-if="createType === 'recover'">Your wallet has been successfully recovered. The blockchain is now being
         scanned for balance and transactions. Backup your recovery seed to a safe location, without your seed your funds
         cannot be recovered.</p>
-      <p v-else class="text-[14px] text-[#D9D9D9] font-[Roboto] leading-[20px]">A new wallet has been created. Backup your recovery seed to a safe location.
+      <p class="description" v-else>A new wallet has been created. Backup your recovery seed to a safe location.
         This seed will be used to recover access to your SIA wallet and Tiri vault if you forget your password, delete browser data or a new device connection.
         If you loose your seed you will be unable to recover your wallet and all files stored in it.</p>
       <template v-if="walletType === 'default'">
         <div class="control relative">
           <label>{{ "Recovery Seed" }}</label>
           <textarea v-model="wallet.seed"
-                    class="bg-[#49454F] border border-[#938F99] text-[#F5F5F5] font-['Roboto'] leading-tight tracking-tight sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#49454F] dark:!border-[#938F99] dark:placeholder-gray-400 dark:!text-[#F5F5F5] dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    class="bg-[#49454F] border border-[#938F99] text-[#F5F5F5]  leading-tight tracking-tight sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#49454F] dark:!border-[#938F99] dark:placeholder-gray-400 dark:!text-[#F5F5F5] dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     readonly/>
             <div class="w-[18px] h-[18px] right-2 bottom-2 absolute cursor-pointer" @click="copyToClipboard">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="19" viewBox="0 0 18 19" fill="none">
@@ -170,12 +171,17 @@
             </div>
         </div>
         <div class="control">
-          <input type="checkbox" id="chkSeedExported" v-model="exported" class="purple"/>
-          <label for="chkSeedExported" class="font-[Roboto]">{{ "My recovery seed is saved in a secure location" }}</label>
+          <input type="checkbox" id="chkSeedExported" v-model="exported"/>
+          <label for="chkSeedExported" class="">{{ "My recovery seed is saved in a secure location" }}</label>
+          <div class="checkmark">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <path d="M6 12.4L2 8.4L3.4 7L6 9.6L12.6 3L14 4.4L6 12.4Z" fill="#381E72"/>
+            </svg>
+          </div>
         </div>
       </template>
       <div class="controls">
-        <button class="btn btn-success btn-inline font-[Roboto]"
+        <button class="btn btn-success btn-inline "
                 @click="onWalletCreated" :disabled="doneDisabled">{{ "Done" }}
         </button>
       </div>
@@ -459,7 +465,7 @@ const captionRecover = computed(() => {
     case 'forgot-password':
       return 'Reset password';
     default:
-      return 'Recover';
+      return 'Recover your wallet';
   }
 })
 
@@ -467,7 +473,7 @@ const description = computed(() => {
   switch (setupMode.value) {
     case 'default':
     case 'create-new':
-      return 'Set a secure password that will be used to provide access to your Tiri vault. Tiri doesn\'t hold your password, it is stored locally in the extension and could be reset by clearing browser data. In this case you will need to use your SIA wallet seed to set a new password and restore access to your Tiri vault.';
+      return 'Set a secure password. This password will be required to unlock, create, and recover your Tiri vault. All passwords are encrypted, stored locally and never leave your device.';
     case 'forgot-password':
       return 'Please, enter your new password. On the next step you will need your wallet seed to restore access to your Tiri data wallet';
     default:
@@ -547,6 +553,7 @@ p.description {
   font-style: normal;
   font-weight: 400;
   line-height: 20px; /* 142.857% */
+  margin: 23px 0;
 }
 
 .setup-step {
@@ -633,11 +640,21 @@ p {
 .create-wallet-button {
   width: 100%;
   padding: 30px;
-  border: 1px solid #D0BCFF;
   border-radius: 5px;
+  border: 5px solid #D06B57;
+  background: #E3CCA9;
+  color: #8AA8AC;
+  fill: #8AA8AC;
   box-shadow: 0 1px 2px 1px rgba(0, 0, 0, 0.14);
   transition: all 0.3s linear;
   cursor: pointer;
+
+  &:hover {
+    color: #E4B858;
+    fill: #E4B858;
+    stroke: #73B991;
+    stroke-width: 2px;
+  }
 
   &.create-button-disabled {
     opacity: 0.54;
@@ -653,13 +670,35 @@ p {
     font-size: 1.2rem;
     text-align: center;
     margin-bottom: 15px;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 20px;
   }
 
   p {
-    color: rgba(255, 255, 255, 0.54);
+    color: #49454F;
     margin: 0;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 20px;
+    text-align: center;
   }
 
+}
+.recover-wallet-button {
+  border: 5px solid #72B890;
+  stroke: #8AA8AC;
+  stroke-width: 2px;
+  &:hover {
+    color: #D06B57;
+    fill: #D06B57;
+    stroke: #E4B858;
+    .button-title {
+      font-weight: 400;
+    }
+  }
 }
 
 .controls {
@@ -667,6 +706,14 @@ p {
 
   button {
     margin: 0;
+  }
+}
+
+.control.recover {
+  textarea {
+    border-radius: 5px;
+    border: 5px solid #73B991;
+    background: none;
   }
 }
 </style>

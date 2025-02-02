@@ -4,32 +4,32 @@
       <div>
       <div class="mx-auto w-[60px] h-[60px]">
         <svg xmlns="http://www.w3.org/2000/svg" width="61" height="60" viewBox="0 0 61 60" fill="none">
-          <path d="M55.5 55L48.1514 47.6514C52.6843 43.1295 55.5 36.8932 55.5 30C55.5 16.215 44.285 5 30.5 5C16.715 5 5.5 16.215 5.5 30C5.5 43.785 16.715 55 30.5 55V50C19.4725 50 10.5 41.0275 10.5 30C10.5 18.9725 19.4725 10 30.5 10C41.5275 10 50.5 18.9725 50.5 30C50.5 35.515 48.2488 40.5068 44.626 44.126L38 37.5V55H55.5Z" fill="#19CF86"/>
+          <path d="M46.25 19.3333H44.625V15.0952C44.625 7.31224 38.2951 1 30.5 1C22.7049 1 16.375 7.31224 16.375 15.0952V19.3333H14.75C11.3124 19.3333 8.5 22.1361 8.5 25.5714V51.7619C8.5 55.1973 11.3124 58 14.75 58H46.25C49.6876 58 52.5 55.1973 52.5 51.7619V25.5714C52.5 22.1361 49.6876 19.3333 46.25 19.3333ZM30.5 42.9048C28.1626 42.9048 26.25 40.9932 26.25 38.6667C26.25 36.3401 28.1626 34.4286 30.5 34.4286C32.8374 34.4286 34.75 36.3401 34.75 38.6667C34.75 40.9932 32.8374 42.9048 30.5 42.9048ZM37.6375 19.3333H23.3625V15.0952C23.3625 11.1711 26.5614 7.97619 30.5 7.97619C34.4386 7.97619 37.6375 11.1711 37.6375 15.0952V19.3333Z" fill="#E4B858" stroke="#8AA8AC" stroke-width="2"/>
         </svg>
       </div>
-      <h2 class="text-center text-[12px] text-emerald-500 font-normal font-['Roboto'] leading-[20px] tracking-tight pt-[5px]">{{ 'Unlock Wallet' }}</h2>
+      <h2 class="text-center">{{ 'Unlock the vault' }}</h2>
       </div>
-      <p class="text-[14px] text-[#D9D9D9] font-[Roboto] leading-[20px]">{{
-          'Your Tiri vault is currently locked. Enter your password to unlock it.'
+      <p class="text-[14px] text-[#49454F] text-center">{{
+          'This Tiri vault is currently locked. Enter your password to unlock it.'
         }}</p>
       <form @submit.prevent="onUnlockWallets">
         <div class="control mb-[23px]">
           <label>{{ 'Wallet Password' }}</label>
-          <input type="password" v-model="password" autocomplete="current-password" class="!border-[#938F99]"/>
+          <input class="password-input" type="password" v-model="password" autocomplete="current-password"/>
         </div>
 
-        <div v-if="false" class="w-full text-center text-zinc-300 font-normal font-['Roboto'] underline leading-tight mb-[23px] cursor-pointer" @click="forgotPassword">Reset password</div>
+        <div v-if="false" class="w-full text-center text-zinc-300 font-normal  underline leading-tight mb-[23px] cursor-pointer" @click="forgotPassword">Reset password</div>
 
         <div class="buttons">
-          <button class="btn btn-success btn-inline font-[Roboto]" :disabled="unlocking">{{ 'Unlock Wallet' }}</button>
-          <div v-if="false" class="btn btn-outline btn-inline font-[Roboto]" @click="createNewWallet">{{ 'Create new Wallet' }}</div>
+          <button class="btn btn-success btn-inline " :disabled="unlocking">{{ 'Unlock Wallet' }}</button>
+          <div v-if="false" class="btn btn-outline btn-inline " @click="createNewWallet">{{ 'Create new Wallet' }}</div>
         </div>
       </form>
-      <p class="text-[14px] text-[#D9D9D9] font-[Roboto] leading-[20px]">Tiri doesn't hold your password and can not change it. If you have forgotten your password,
-        you can reset the Tiri vault settings and restore access to your data with your SIA wallet seed by <a @click.prevent="forgotPassword" class="text-[#BEA9EE] hover:text-[#77FF85] cursor-pointer underline">pressing here</a>.
+      <p class="text-[14px] text-[#000]">Tiri doesn't hold your password and can not change it. If you have forgotten your password,
+        you can reset the Tiri vault settings and restore access to your data with your SIA wallet seed by <a @click.prevent="forgotPassword" class="text-[#8AA8AC] cursor-pointer underline">pressing here</a>.
         Before you continue make sure you remember your SIA wallet seed as once you have reset the Tiri vault,
         you won't be able to restore access with your old password (if you have remembered it), only your SIA wallet seed will unlock it.
-        If you want to create a new SIA wallet with Tiri vault, <a @click.prevent="createNewWallet" class="text-[#BEA9EE] hover:text-[#77FF85] cursor-pointer underline">press here</a>.</p>
+        If you want to create a new SIA wallet with Tiri vault, <a @click.prevent="createNewWallet" class="text-[#73B991] cursor-pointer underline">press here</a>.</p>
 
     </div>
 
@@ -128,6 +128,16 @@ h2, p {
   margin: 0;
 }
 
+h2 {
+  color: #000;
+  text-align: center;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 20px; /* 166.667% */
+  letter-spacing: 0.25px;
+}
+
 .page-icon {
   text-align: center;
   color: primary;
@@ -148,6 +158,10 @@ h2, p {
   align-content: safe center;
   overflow-x: hidden;
   overflow-y: auto;
+
+  a {
+    font-weight: 600;
+  }
 }
 
 .text-secondary {
@@ -160,5 +174,11 @@ h2, p {
   border: none !important;
   outline: none !important;
   cursor: pointer;
+}
+
+.password-input {
+  border-radius: 5px;
+  border: 5px solid #8AA8AC;
+  background: none;
 }
 </style>
