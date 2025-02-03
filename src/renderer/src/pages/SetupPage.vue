@@ -203,7 +203,7 @@ import {routerPush} from '~/router'
 import {api, isFetchError} from '~/services'
 import {useUserStore} from '~/store/user'
 import {useWalletsStore} from '~/store/wallet'
-import {computed, reactive, ref, unref, watch} from 'vue'
+import {computed, reactive, ref, unref} from 'vue'
 import setAuthorizationToken from '~/plugins/set-authorization-token'
 import {ConsensusState} from "~/types/users";
 import {generateSeed, generateAddresses} from '~/sia/index.js';
@@ -256,13 +256,6 @@ const {updateUser, userLogout} = userStore;
 
 let addresses = []
 
-console.log('!', setupMode.value, step.value);
-watch(setupMode, (value) => {
-  console.log('!!', value, step.value);
-})
-watch(step, (value) => {
-  console.log('!!!', setupMode.value, value)
-})
 
 const enableNext = computed(() => {
   return form.unlockPassword.length > 0 && form.unlockPassword === form.confirmPassword;
@@ -489,12 +482,10 @@ const description = computed(() => {
 })
 
 const stepBackward = async ()  => {
-  console.log('???', setupMode.value, step.value);
   if (setupMode.value === 'forgot-password') {
     switch (step.value) {
       case 'password':
         await setSetup(true);
-        //setupMode.value = 'default';
         break;
       case 'create':
         step.value = 'password';
@@ -509,7 +500,6 @@ const stepBackward = async ()  => {
     switch (step.value) {
       case 'password':
         await setSetup(true);
-        //setupMode.value = 'default';
         break;
       case 'create':
         step.value = 'password';
