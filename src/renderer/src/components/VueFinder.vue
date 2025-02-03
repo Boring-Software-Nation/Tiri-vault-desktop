@@ -4,7 +4,7 @@
       <div
           :class="fullScreen ? 'fixed w-screen inset-0 z-20' : 'relative rounded-md'"
           :style="!fullScreen ? 'max-height: ' + maxHeight : ''"
-          class="h-full border flex flex-col bg-white dark:bg-zinc-900 text-gray-700 dark:text-neutral-200 border-neutral-300 dark:border-gray-900 min-w-min select-none"
+          class="h-full border flex flex-col dark:bg-zinc-900 text-gray-700 dark:text-neutral-200 border-neutral-300 dark:border-gray-900 min-w-min select-none"
           @mousedown="emitter.emit('vf-contextmenu-hide')" @touchstart="emitter.emit('vf-contextmenu-hide')">
         <v-f-toolbar :data="fetchData" />
         <v-f-breadcrumb :data="fetchData" :currentWalletId="getCurrentWalletId"/>

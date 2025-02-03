@@ -278,7 +278,7 @@
       </div>
       <div v-if="showFileInfo === true"
            :class="[searchQuery.length || view ==='list' ? 'w-[262px] pl-[14px]' : 'w-[272px] pl-[24px]']"
-           class="absolute h-full bg-zinc-900 right-0  p-1 pr-[24px] mt-2">
+           class="absolute h-full dark:bg-zinc-900 right-0  p-1 pr-[24px] mt-2">
         <div class="w-[241px] h-[202px] flex-col justify-start items-start gap-2.5 inline-flex">
           <div class="justify-start items-start gap-[116px] inline-flex">
             <div class="w-28 text-zinc-700 text-sm font-semibold font-['Roboto'] leading-tight tracking-tight">File info</div>
@@ -290,9 +290,9 @@
             <div class="justify-start items-start gap-[5px] inline-flex">
               <div class="text-violet-900 text-sm font-semibold font-['Roboto'] uppercase leading-tight tracking-tight">{{getSelectedItemFilename()}}</div>
             </div>
-            <div class="text-zinc-300 text-sm font-normal font-['Roboto'] leading-tight tracking-tight max-w-[230px] break-all">Path: {{getSelectedItemPath()}}</div>
-            <div class="text-zinc-300 text-sm font-normal font-['Roboto'] leading-tight tracking-tight">Size: {{getSelectedItemSize()}}</div>
-            <div><span class="text-zinc-300 text-sm font-normal font-['Roboto'] leading-tight tracking-tight">Health: </span><span class="text-emerald-500 text-sm font-normal font-['Roboto'] leading-tight tracking-tight">{{getSelectedItemHealth()}}</span></div>
+            <div class="dark:text-zinc-300 text-sm font-normal font-['Roboto'] leading-tight tracking-tight max-w-[230px] break-all">Path: {{getSelectedItemPath()}}</div>
+            <div class="dark:text-zinc-300 text-sm font-normal font-['Roboto'] leading-tight tracking-tight">Size: {{getSelectedItemSize()}}</div>
+            <div><span class="dark:text-zinc-300 text-sm font-normal font-['Roboto'] leading-tight tracking-tight">Health: </span><span class="text-emerald-500 text-sm font-normal font-['Roboto'] leading-tight tracking-tight">{{getSelectedItemHealth()}}</span></div>
           </div>
           <div class="w-[241px] justify-center items-center inline-flex">
             <div class="grow shrink basis-0 self-stretch flex-col justify-center items-start inline-flex">

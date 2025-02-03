@@ -5,7 +5,7 @@
       <div class="w-[150px] h-[35px] rounded-[100px] border border-neutral-400 flex-col justify-center items-center inline-flex mr-2 cursor-pointer"
            :aria-label="t('Upload')" data-microtip-position="bottom" role="tooltip"
            @click="emitter.emit('vf-modal-show', {type:'upload', items: selectedItems})">
-        <div class="self-stretch h-[35px] pl-4 pr-6 py-1 hover:text-[#D0BCFF] text-[#E6E0E9] hover:bg-[#D0BCFF] hover:bg-opacity-10 hover:fill-[#D0BCFF] fill-[#FFFEFE] justify-center items-center gap-2 inline-flex rounded-[100px] ">
+        <div class="self-stretch h-[35px] pl-4 pr-6 py-1 hover:text-[#D0BCFF] dark:text-[#E6E0E9] hover:bg-[#D0BCFF] hover:bg-opacity-10 hover:fill-[#D0BCFF] dark:fill-[#FFFEFE] justify-center items-center gap-2 inline-flex rounded-[100px] ">
           <div class="relative">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" >
               <g clip-path="url(#clip0_530_1794)">
@@ -27,7 +27,7 @@
       <div class="w-[150px] h-[35px] rounded-[100px] border border-neutral-400 flex-col justify-center items-center inline-flex mr-2 cursor-pointer"
            :aria-label="t('New Folder')" data-microtip-position="bottom-right" role="tooltip"
            @click="emitter.emit('vf-modal-show', {type:'new-folder', items: selectedItems})">
-        <div class="self-stretch h-[35px] pl-4 pr-6 py-1 hover:text-[#D0BCFF] text-[#E6E0E9] hover:bg-[#D0BCFF] hover:bg-opacity-10 hover:fill-[#D0BCFF] fill-[#FFFEFE] justify-center items-center gap-2 inline-flex rounded-[100px]">
+        <div class="self-stretch h-[35px] pl-4 pr-6 py-1 hover:text-[#D0BCFF] dark:text-[#E6E0E9] hover:bg-[#D0BCFF] hover:bg-opacity-10 hover:fill-[#D0BCFF] dark:fill-[#FFFEFE] justify-center items-center gap-2 inline-flex rounded-[100px]">
           <div class="relative">
             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 25 25">
               <mask id="mask0_22_2648" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="25" height="25">

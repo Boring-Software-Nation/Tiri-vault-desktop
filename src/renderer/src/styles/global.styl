@@ -7,25 +7,25 @@
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
-	background-color: darken(bg-dark-accent, 5);
+	background-color: #E4B858;
 	-webkit-border-radius: 100px;
 
 	&:hover {
-		background-color: darken(bg-dark-accent, 8);	
+		background-color: #E4B858;	
 	}
 }
 
 ::-webkit-scrollbar-thumb:vertical, ::-webkit-scrollbar-thumb:horizontal {
-	background: rgba(255, 255, 255, 0.2);
+	background: #322F3A;
 	-webkit-border-radius: 100px;
 }
 ::-webkit-scrollbar-thumb:vertical:hover, ::-webkit-scrollbar-thumb:horizontal:hover {
-	background: rgba(255, 255, 255, 0.4);
+	background: #322F3A;
 	-webkit-border-radius: 100px;
 }
 
 ::-webkit-scrollbar-corner {
-	background: bg-dark-accent;
+	background: #E4B858;
 }
 
 a {
@@ -56,7 +56,7 @@ html, body {
 	display: block;
 	width: 100%;
 	padding: 30px;
-	background: #fff;
+	background: bg;
 	box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
 	border-radius: 4px;
 }
@@ -123,15 +123,15 @@ body.win32 {
 }
 
 .btn {
+	border-radius: 5px;
+	border: 3px solid #D06B57;
+	background: #E4B857;
 	display: block;
 	width: 100%;
 	outline: none;
-	background: #CCC;
 	padding: 8px 13px;
 	white-space: nowrap;
-	border: none;
 	font-size: 1rem;
-	border-radius: 4px;
 	box-shadow: 0 1px 2px 1px rgba(0, 0, 0, 0.14);
 	transition: all 0.3s linear;
 	text-decoration: none;
@@ -153,8 +153,13 @@ body.win32 {
 	}
 
 	&.btn-success {
-		background: primary;
-		color: rgba(255, 255, 255, 0.84);
+		color: #272626;
+		text-align: center;
+		font-size: 14px;
+		font-style: normal;
+		font-weight: 600;
+		line-height: 20px; /* 142.857% */
+		letter-spacing: 0.25px;
 	}
 
 	&.btn-outline {
@@ -174,6 +179,7 @@ body.win32 {
 	&:disabled {
 		opacity: 0.54;
 		cursor: default;
+		border: 3px solid #E4B857;
 	}
 }
 
@@ -267,6 +273,10 @@ body.theme-change {
 body.dark {
 	background-color: bg-dark;
 	color: rgba(255, 255, 255, 0.84);
+
+	.panel {
+		background: #fff;
+	}
 
 	.btn {
 		background: #383838;

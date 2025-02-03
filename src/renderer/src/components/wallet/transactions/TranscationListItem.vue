@@ -223,16 +223,30 @@ export default {
 
 tr {
   color: rgba(255, 255, 255, 0.54);
-  background: bg-dark;
+  background: bg;
 
   td {
-    border-bottom: 1px solid bg-dark-accent;
+    border-bottom: 1px solid bg-accent;
     padding: 15px;
   }
 
   &:hover, &:focus, &:active {
-    background: bg-dark-accent;
+    background: bg-accent;
     cursor: pointer;
+  }
+}
+
+body.dark {
+  tr {
+    background: bg-dark;
+
+    td {
+      border-color: bg-dark-accent;
+    }
+
+    &:hover, &:focus, &:active {
+      background: bg-dark-accent;
+    }
   }
 }
 

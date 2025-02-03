@@ -146,11 +146,21 @@ export default {
 @require "../../../styles/vars";
 .transaction-outputs.transaction-outputs {
   padding: 7px;
-  background: bg-dark;
+  background: bg;
   overflow: hidden;
 
   table tbody tr {
+    background: bg;
+  }
+}
+
+body.dark {
+  .transaction-outputs.transaction-outputs {
     background: bg-dark;
+
+    table tbody tr {
+      background: bg-dark;
+    }
   }
 }
 </style>

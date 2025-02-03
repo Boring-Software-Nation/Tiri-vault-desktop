@@ -987,7 +987,7 @@ ipcOn('fileRenamed', (event, err) => {
 </script>
 
 <template>
-  <div class="test">
+  <div class="sync-page">
     <div class="directory" v-if="state.directory"><a href="#" @click="openDirectory">{{ state.directory }}</a></div>
     <div class="directory" v-else>Directory not selected</div>
     <div class="actions">
@@ -1003,8 +1003,10 @@ ipcOn('fileRenamed', (event, err) => {
   </div>
 </template>
 
-<style scoped>
-.test {
+<style lang="stylus" scoped>
+@require "../styles/vars";
+
+.sync-page {
   display: flex;
   flex-direction: column;
   padding: 20px 10px 20px 20px;
@@ -1030,31 +1032,34 @@ ipcOn('fileRenamed', (event, err) => {
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
-  border: 1px solid white;
+  border-radius: 5px;
+  border: 3px solid #E4B857;
+  background: #E4B857;
+  color: #272626;
   text-align: center;
   font-weight: 600;
   white-space: nowrap;
-  border-radius: 20px;
   padding: 0 20px;
   line-height: 38px;
   font-size: 14px;
-  color: white;
 }
 
 .action a:hover {
-  background-color: #333;
+  border: 3px solid #D06B57;
 }
 
 .directory {
   width: 100%;
   padding: 10px 20px 14px 20px;
-  border-radius: 20px;
-  background: #333;
+  border-radius: 30px;
+  border: 5px solid #E3CCA9;
+  background: #8AA8AC;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .directory a {
-  color: white;
+  color: primary-light;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
 }

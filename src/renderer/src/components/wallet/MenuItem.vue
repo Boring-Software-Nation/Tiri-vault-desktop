@@ -48,7 +48,8 @@
   align-items: center;
   gap: 12px;
   display: inline-flex;
-  border-radius: 100px;
+  border-radius: 5px;
+  border: 3px solid #8AA8AC;
   overflow: hidden;
 }
 
@@ -59,7 +60,8 @@
   padding-bottom: 16px;
   padding-left: 16px;
   padding-right: 24px;
-  background: #4A4458;
+  //background: #4A4458;
+  background: #E4B858;
   justify-content: flex-start;
   align-items: center;
   gap: 12px;

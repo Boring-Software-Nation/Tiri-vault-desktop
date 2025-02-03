@@ -255,8 +255,16 @@ export default {
   .transaction-detail {
     overflow-x: hidden;
     overflow-y: auto;
-    background: bg-dark;
+    background: bg;
     border-radius: 4px;
+  }
+}
+
+body.dark {
+  .transaction-verify { 
+    .transaction-detail {
+      background: bg-dark;
+    }
   }
 }
 

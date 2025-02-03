@@ -40,14 +40,11 @@
             <div class="wallet-address-caption">{{ formatCurrentAddress }}</div>
             <div style="width: 18px; height: 18px; position: relative; cursor: pointer;" @click="copyToClipboard">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <mask id="mask0_18_617" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="18"
-                      height="18">
+                <mask id="mask0_3022_5424" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="18" height="18">
                   <rect width="18" height="18" fill="#D9D9D9"/>
                 </mask>
-                <g mask="url(#mask0_18_617)">
-                  <path
-                      d="M14.25 14.25H6C5.5875 14.25 5.23438 14.1031 4.94063 13.8094C4.64688 13.5156 4.5 13.1625 4.5 12.75V2.25C4.5 1.8375 4.64688 1.48438 4.94063 1.19063C5.23438 0.896875 5.5875 0.75 6 0.75H11.25L15.75 5.25V12.75C15.75 13.1625 15.6031 13.5156 15.3094 13.8094C15.0156 14.1031 14.6625 14.25 14.25 14.25ZM10.5 6V2.25H6V12.75H14.25V6H10.5ZM3 17.25C2.5875 17.25 2.23438 17.1031 1.94063 16.8094C1.64688 16.5156 1.5 16.1625 1.5 15.75V5.25H3V15.75H11.25V17.25H3Z"
-                      fill="#D0BCFF"/>
+                <g mask="url(#mask0_3022_5424)">
+                  <path d="M14.25 14.25H6C5.5875 14.25 5.23438 14.1031 4.94063 13.8094C4.64688 13.5156 4.5 13.1625 4.5 12.75V2.25C4.5 1.8375 4.64688 1.48438 4.94063 1.19063C5.23438 0.896875 5.5875 0.75 6 0.75H11.25L15.75 5.25V12.75C15.75 13.1625 15.6031 13.5156 15.3094 13.8094C15.0156 14.1031 14.6625 14.25 14.25 14.25ZM10.5 6V2.25H6V12.75H14.25V6H10.5ZM3 17.25C2.5875 17.25 2.23438 17.1031 1.94063 16.8094C1.64688 16.5156 1.5 16.1625 1.5 15.75V5.25H3V15.75H11.25V17.25H3Z" fill="#D06B57"/>
                 </g>
               </svg>
             </div>
@@ -57,14 +54,14 @@
 
       <div class="flex justify-center mt-4">
         <div style="width: 521px; height: 37px; text-align: center"><span
-            style="color: #F5F5F5; font-size: 32px; font-family: Roboto; font-weight: 400; line-height: 52px; word-wrap: break-word">Powerful features when </span><span
-            style="color: #19CF86; font-size: 32px; font-family: Roboto; font-weight: 400; line-height: 52px; word-wrap: break-word">subscribed</span>
+            style="color: #49454F; font-size: 24px; font-weight: 400; line-height: 52px;">Powerful features under </span><span
+            style="color: #73B991; font-size: 24px; font-weight: 400; line-height: 52px;">subscriptions</span>
         </div>
       </div>
 
       <div class="flex justify-center mt-4">
         <div
-            style="width: 531px; text-align: center; color: #CAC4D0; font-size: 14px; font-family: Roboto; font-weight: 400; line-height: 20px; letter-spacing: 0.25px; word-wrap: break-word">
+            style="width: 531px; text-align: center; color: #49454F; font-size: 14px; font-weight: 400; line-height: 20px; letter-spacing: 0.25px;">
           Chose a plan that's right for you
         </div>
       </div>
@@ -72,17 +69,18 @@
       <div class="flex justify-center mt-4">
         <div class="plan-c">
 
-          <div class="plan-col-c" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL')}">
+          <div class="plan-col-c plan-trial" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL')}">
             <div class="plan-title">{{ getNameByCode('TRIAL') }}</div>
-            <div class="plan-period">/month</div>
+            <div class="plan-period">for 1 month</div>
             <div class="plan-descr">Start your free trial today</div>
             <div class="plan-price" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL')}">
               {{ getPriceByCode('TRIAL').value }}
             </div>
+            <div class="plan-vol">{{ getVolByCode('TRIAL') }}</div>
             <div v-if="!activeSubscription.plan_code" class="plan-btn-c" @click="paySubscription('TRIAL')">
               <div class="btn">{{'Get started now'}}</div>
             </div>
-            <div
+            <!-- <div
                 style="left: 32px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
               <div style="width: 18px; height: 18px; position: relative">
                 <div
@@ -94,10 +92,10 @@
                 </div>
               </div>
               <div class="plan-vol">{{ getVolByCode('TRIAL') }}</div>
-            </div>
+            </div> -->
           </div>
 
-          <div class="plan-col-c" :class="{'active':activeSubscription.plan_code.startsWith('MEDIUM')}">
+          <div class="plan-col-c plan-medium" :class="{'active':activeSubscription.plan_code.startsWith('MEDIUM')}">
             <div class="plan-title">{{ getNameByCode('MEDIUM') }}</div>
             <div class="plan-period">/month</div>
             <div class="plan-descr">Ideal for individuals who need small <br/>to store small amount <br/>of data.</div>
@@ -107,7 +105,7 @@
             <div v-if="!downgradeDate" class="plan-btn-c" @click="paySubscription('MEDIUM')">
               <div class="btn">{{activeSubscription.plan_code.startsWith('MEDIUM') ? 'Renew' : 'Get started now'}}</div>
             </div>
-            <div
+            <!-- <div
                 style="left: 47px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
               <div style="width: 18px; height: 18px; position: relative">
                 <div
@@ -119,11 +117,12 @@
                 </div>
               </div>
               <div class="plan-vol">{{ getVolByCode('MEDIUM') }}</div>
-            </div>
+            </div> -->
+            <div class="plan-vol">{{ getVolByCode('MEDIUM') }}</div>
 
           </div>
 
-          <div class="plan-col-c" :class="{'active':activeSubscription.plan_code.startsWith('LARGE')}">
+          <div class="plan-col-c plan-large" :class="{'active':activeSubscription.plan_code.startsWith('LARGE')}">
             <div class="plan-title">{{ getNameByCode('LARGE') }}</div>
             <div class="plan-period">/month</div>
             <div class="plan-descr">Ideal for individuals who need small <br/>to store small amount <br/>of data.</div>
@@ -133,7 +132,7 @@
             <div v-if="!downgradeDate" class="plan-btn-c" @click="paySubscription('LARGE')">
               <div class="btn">{{activeSubscription.plan_code.startsWith('LARGE') ? 'Renew' : 'Get started now'}}</div>
             </div>
-            <div
+            <!-- <div
                 style="left: 47px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
               <div style="width: 18px; height: 18px; position: relative">
                 <div
@@ -145,7 +144,8 @@
                 </div>
               </div>
               <div class="plan-vol">{{ getVolByCode('LARGE') }}</div>
-            </div>
+            </div> -->
+            <div class="plan-vol">{{ getVolByCode('LARGE') }}</div>
           </div>
 
 
@@ -400,10 +400,10 @@ const getNameByCode = (planCode) => {
       return 'Trial';
     case 'MEDIUM':
     case 'MEDIUM-2':
-      return 'Medium';
+      return 'Home safe';
     case 'LARGE':
     case 'LARGE-2':
-      return 'Large';
+      return 'PRO vault';
   }
   return '';
 }
@@ -576,7 +576,7 @@ const copyToClipboard = async () => {
     position: absolute;
     top: calc(100% + 20px);
     right: 0;
-    background: bg-dark-accent;
+    background: bg-accent;
     border-radius: 4px;
     border-top-right-radius: 0;
     z-index: 99;
@@ -620,6 +620,14 @@ const copyToClipboard = async () => {
   }
 }
 
+body.dark {
+  .wallet-more-btn {
+    .dropdown {
+      background: bg-accent-dark;
+    }
+  }
+}
+
 .wallet-balance-c {
   width: 400px;
   height: 80px;
@@ -628,18 +636,19 @@ const copyToClipboard = async () => {
   align-items: center;
   gap: 16px;
   display: inline-flex;
-  border-radius: 12px;
   overflow: hidden;
-  border: 1px #49454F solid;
+  border-radius: 12px;
+  border: 3px solid #E4B858;
+  background: #8AA8AC;
 }
 
 .wallet-siacoin-balance {
   //color: primary;
   //font-size: 2.5rem;
   //text-align: center;
-  color: primary;
+  color: #E4B858;
   font-size: 16px;
-  font-family: Roboto;
+  
   font-weight: 500;
   line-height: 24px;
   letter-spacing: 0.15px;
@@ -653,7 +662,7 @@ const copyToClipboard = async () => {
   //margin-bottom: 15px;
   color: #E6E0E9;
   font-size: 16px;
-  font-family: Roboto;
+  
   font-weight: 500;
   line-height: 24px;
   letter-spacing: 0.15px;
@@ -663,7 +672,7 @@ const copyToClipboard = async () => {
 .wallet-plan-caption {
   color: #E6E0E9;
   font-size: 14px;
-  font-family: Roboto;
+  
   font-weight: 400;
   line-height: 20px;
   letter-spacing: 0.25px;
@@ -673,7 +682,7 @@ const copyToClipboard = async () => {
 .wallet-plan-name {
   color: #D0BCFF;
   font-size: 14px;
-  font-family: Roboto;
+  
   font-weight: 400;
   line-height: 20px;
   letter-spacing: 0.25px;
@@ -683,7 +692,7 @@ const copyToClipboard = async () => {
 .wallet-plat-vol {
   color: #F5F5F5;
   font-size: 14px;
-  font-family: Roboto;
+  
   font-weight: 400;
   line-height: 20px;
   letter-spacing: 0.25px;
@@ -693,9 +702,9 @@ const copyToClipboard = async () => {
 .wallet-address-outer-c {
   width: 404px;
   height: 40px;
-  border-radius: 100px;
   overflow: hidden;
-  border: 1px #D0BCFF solid;
+  border-radius: 100px;
+  border: 3px solid #E4B858;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -708,7 +717,7 @@ const copyToClipboard = async () => {
   padding-bottom: 10px;
   padding-left: 16px;
   padding-right: 24px;
-  background: rgba(208, 188, 255, 0.12);
+  background: rgba(138, 168, 172, 0.12);
   justify-content: center;
   align-items: center;
   gap: 8px;
@@ -717,9 +726,8 @@ const copyToClipboard = async () => {
 
 .wallet-address-caption {
   text-align: center;
-  color: #D0BCFF;
+  color: #49454F;
   font-size: 14px;
-  font-family: Roboto;
   font-weight: 500;
   line-height: 20px;
   letter-spacing: 0.10px;
@@ -760,24 +768,24 @@ const copyToClipboard = async () => {
   height: 328px;
   position: relative;
   background: #2B2930;
-  border-radius: 28px;
+  border-radius: 10px;
   overflow: hidden;
 
   &:hover {
-    background-color: #171717;
+    //background-color: #171717;
     .plan-btn-c {
-      border: 1px #BEA9EE solid !important;
-      background-color: #BEA9EE !important;
+      // border: 1px #BEA9EE solid !important;
+      // background-color: #BEA9EE !important;
     }
     .btn {
-      background-color: #BEA9EE !important;
-      color: #381E72 !important;
+      // background-color: #BEA9EE !important;
+      // color: #381E72 !important;
     }
   }
 
   &.active {
-    background: #171717;
-    box-shadow: 0px 3px 3px #171717;
+    // background: #171717;
+    // box-shadow: 0px 3px 3px #171717;
     .plan-btn-c {
       border: 1px solid #938F99;
       color: #D0BCFF;
@@ -787,21 +795,44 @@ const copyToClipboard = async () => {
     }
 
     &:hover{
-      background-color: #F5F5F5 !important;
-      .plan-title, .plan-descr, .plan-period, .plan-vol{
-        color: #49454F;
-      }
+      // background-color: #F5F5F5 !important;
+      // .plan-title, .plan-descr, .plan-period, .plan-vol{
+      //   color: #49454F;
+      // }
       .plan-price {
         color: #36343B;
       }
-      .plan-btn-c {
-        border: 1px #4F378B solid;
-        background-color: #4F378B;
-      }
-      .btn {
-        color: #F5F5F5;
-      }
+      // .plan-btn-c {
+      //   border: 1px #4F378B solid;
+      //   background-color: #4F378B;
+      // }
+      // .btn {
+      //   color: #F5F5F5;
+      // }
     }
+  }
+}
+
+.plan-col-c.plan-trial {
+  background: #73B991;
+
+  .plan-btn-c {
+    border: 3px solid #D06B57;
+    background: #E4B858;
+  }
+}
+.plan-col-c.plan-medium {
+  background: #D06B57;
+  .plan-btn-c {
+    border: 3px solid #E4B858;
+    background: #8AA8AC;
+  }
+}
+.plan-col-c.plan-large {
+  background: #E4B858;
+  .plan-btn-c {
+    border: 3px solid #D06B57;
+    background: #73B991;
   }
 }
 
@@ -811,9 +842,8 @@ const copyToClipboard = async () => {
   top: 16px;
   position: absolute;
   text-align: center;
-  color: #E6E0E9;
+  color: #49454F;
   font-size: 24px;
-  font-family: Roboto;
   font-weight: 400;
   line-height: 32px;
   word-wrap: break-word;
@@ -826,9 +856,9 @@ const copyToClipboard = async () => {
   top: 202px;
   position: absolute;
   text-align: center;
-  color: #E6E0E9;
+  color: #49454F;
   font-size: 14px;
-  font-family: Roboto;
+  
   font-weight: 400;
   line-height: 32px;
   word-wrap: break-word;
@@ -841,9 +871,9 @@ const copyToClipboard = async () => {
   top: 64px;
   position: absolute;
   text-align: center;
-  color: #CAC4D0;
+  color: #49454F;
   font-size: 14px;
-  font-family: Roboto;
+  
   font-weight: 400;
   line-height: 20px;
   letter-spacing: 0.25px;
@@ -856,9 +886,9 @@ const copyToClipboard = async () => {
   text-align: center;
   top: 150px;
   position: absolute;
-  color: #F5F5F5;
+  color: #FFF;
   font-size: 32px;
-  font-family: Roboto;
+  
   font-weight: 400;
   line-height: 52px;
   word-wrap: break-word;
@@ -875,9 +905,8 @@ const copyToClipboard = async () => {
   left: 18px;
   top: 276px;
   position: absolute;
-  border-radius: 100px;
+  border-radius: 5px;
   overflow: hidden;
-  border: 1px #938F99 solid;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -885,14 +914,14 @@ const copyToClipboard = async () => {
 
   .btn {
     text-align: center;
-    color: #D0BCFF;
+    color: #49454F;
     font-size: 14px;
-    font-family: Roboto;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 20px;
     letter-spacing: 0.10px;
-    word-wrap: break-word;
     transition: none;
+    border: none;
+    background: none;
   }
 }
 
@@ -903,10 +932,15 @@ const copyToClipboard = async () => {
 //}
 
 .plan-vol {
+  position: absolute;
+  top: 230px;
+  left: 0;
+  width: 100%;
+
   text-align: center;
-  color: #E6E0E9;
+  color: #FFF;
   font-size: 24px;
-  font-family: Roboto;
+  
   font-weight: 400;
   line-height: 32px;
   word-wrap: break-word;
