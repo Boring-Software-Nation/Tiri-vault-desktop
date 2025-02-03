@@ -1,6 +1,6 @@
 <template>
   <div class="page page-setup">
-    <div v-if="setupMode === 'default' && (step === 'choose' || step === 'create' || step === 'review') || setupMode === 'forgot-password' || setupMode === 'create-new' && step === 'password'" class="back-btn absolute left-[24px] top-[24px] cursor-pointer" @click.prevent="stepBackward">
+    <div v-if="setupMode === 'default' && (step === 'choose' || step === 'create' || step === 'review') || setupMode === 'forgot-password' && step !== 'password'" class="back-btn absolute left-[24px] top-[24px] cursor-pointer" @click.prevent="stepBackward">
       <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
         <path d="M39 20C39 19.6516 39 19.4775 38.9784 19.3315C38.8491 18.4601 38.1649 17.7759 37.2935 17.6466C37.1475 17.625 36.9734 17.625 36.625 17.625H19.7531C15.6432 17.625 13.5883 17.625 13.0769 16.3904C12.5655 15.1557 14.0186 13.7027 16.9247 10.7966L21.6862 6.03501C21.9342 5.78703 22.0582 5.66305 22.1465 5.54379C22.6715 4.83467 22.6698 3.86531 22.1423 3.15805C22.0536 3.03911 21.9291 2.91556 21.6803 2.66846C21.433 2.42292 21.3094 2.30016 21.1904 2.2126C20.4832 1.69217 19.5193 1.69387 18.8139 2.2168C18.6952 2.30477 18.572 2.42798 18.3256 2.67439L3.82843 17.1716C2.49509 18.5049 1.82843 19.1716 1.82843 20C1.82843 20.8284 2.49509 21.4951 3.82843 22.8284L18.3249 37.3249C18.5672 37.5672 18.6884 37.6884 18.8048 37.7752C19.514 38.3037 20.486 38.3037 21.1952 37.7752C21.3116 37.6884 21.4328 37.5672 21.6751 37.3249C21.9173 37.0827 22.0384 36.9616 22.1251 36.8453C22.6534 36.1366 22.6538 35.1652 22.1262 34.4561C22.0396 34.3397 21.9186 34.2185 21.6766 33.9761L16.9099 29.2009C14.0096 26.2954 12.5594 24.8426 13.0712 23.6088C13.5829 22.375 15.6355 22.375 19.7409 22.375H36.625C36.9734 22.375 37.1475 22.375 37.2935 22.3534C38.1649 22.2241 38.8491 21.5399 38.9784 20.6685C39 20.5225 39 20.3484 39 20Z" fill="#568BA4" stroke="#D06B57" stroke-width="2" stroke-linejoin="round"/>
       </svg>
@@ -484,25 +484,9 @@ const description = computed(() => {
 const stepBackward = async ()  => {
   if (setupMode.value === 'forgot-password') {
     switch (step.value) {
-      case 'password':
-        await setSetup(true);
-        break;
       case 'create':
-        step.value = 'password';
-        break;
-      case 'review':
-        step.value = 'create';
-        break;
-    }
-    return;
-  }
-  if (setupMode.value === 'create-new') {
-    switch (step.value) {
-      case 'password':
-        await setSetup(true);
-        break;
-      case 'create':
-        step.value = 'password';
+        setupMode.value = 'default';
+        step.value = 'choose';
         break;
       case 'review':
         step.value = 'create';
