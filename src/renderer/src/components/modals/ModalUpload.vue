@@ -2,10 +2,10 @@
   <v-f-modal-layout>
     <div >
 
-      <div class="w-full h-[72px] px-4 py-[5px] bg-zinc-800 rounded-tl-[28px] rounded-tr-[28px] justify-start items-center gap-1 inline-flex" style="border-bottom: 1px #938F99 solid">
+      <div class="w-full h-[72px] px-4 py-[5px] dark:bg-zinc-800 rounded-tl-[28px] rounded-tr-[28px] justify-start items-center gap-1 inline-flex" style="border-bottom: 1px #938F99 solid">
         <div class="grow shrink basis-0 flex-col justify-center items-start inline-flex">
           <div class="h-6 py-2.5 justify-start items-center gap-px inline-flex">
-            <div class="text-zinc-200 text-base font-normal font-['Roboto'] leading-normal tracking-wide">Upload files</div>
+            <div class="dark:text-zinc-200 text-base font-normal font-['Roboto'] leading-normal tracking-wide">Upload files</div>
           </div>
         </div>
         <div @click="emitter.emit('vf-modal-close')" class="w-12 h-12 flex-col justify-center items-center gap-2.5 inline-flex cursor-pointer">
