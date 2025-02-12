@@ -337,16 +337,12 @@ const getPriceByCode = (planCode: string) => computed(() => {
       return 'Free'
     case 'MEDIUM':
     case 'MEDIUM-2':
-      //val = parseFloat(CONFIG.MEDIUM_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
-      //return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
-      val = parseInt(CONFIG.MEDIUM_PRICE);
-      return isNaN(val) ? '' : val  + ' sc';
+      val = parseFloat(CONFIG.MEDIUM_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
+      return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
     case 'LARGE':
     case 'LARGE-2':
-      //val = parseFloat(CONFIG.LARGE_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
-      //return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
-      val = parseInt(CONFIG.LARGE_PRICE);
-      return isNaN(val) ? '' : val  + ' sc';
+      val = parseFloat(CONFIG.LARGE_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
+      return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
   }
   return '';
 })
