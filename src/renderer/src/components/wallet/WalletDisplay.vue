@@ -69,16 +69,19 @@
       <div class="flex justify-center mt-4">
         <div class="plan-c">
 
-          <div class="plan-col-c plan-trial" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL')}">
+          <div class="plan-col-c plan-trial" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL'), 'expired':activeSubscription.plan_code && !activeSubscription.plan_code.startsWith('TRIAL')}">
             <div class="plan-title">{{ getNameByCode('TRIAL') }}</div>
             <div class="plan-period">for 1 month</div>
-            <div class="plan-descr">Start your free trial today</div>
+            <div class="plan-descr">Just a free trial to test functionality</div>
             <div class="plan-price" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL')}">
               {{ getPriceByCode('TRIAL').value }}
             </div>
             <div class="plan-vol">{{ getVolByCode('TRIAL') }}</div>
-            <div v-if="!activeSubscription.plan_code" class="plan-btn-c" @click="paySubscription('TRIAL')">
-              <div class="btn">{{'Get started now'}}</div>
+            <div v-if="activeSubscription.plan_code" class="plan-btn-c">
+              <div class="btn">{{activeSubscription.plan_code.startsWith('TRIAL') ? 'Active' : 'Trial ended'}}</div>
+            </div>
+            <div v-else class="plan-btn-c" @click="paySubscription('TRIAL')">
+              <div class="btn">{{'Subscribe'}}</div>
             </div>
             <!-- <div
                 style="left: 32px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
@@ -103,7 +106,7 @@
               {{ getPriceByCode('MEDIUM').value }}
             </div>
             <div v-if="!downgradeDate" class="plan-btn-c" @click="paySubscription('MEDIUM')">
-              <div class="btn">{{activeSubscription.plan_code.startsWith('MEDIUM') ? 'Renew' : 'Get started now'}}</div>
+              <div class="btn">{{activeSubscription.plan_code.startsWith('MEDIUM') ? 'Extend' : activeSubscription.plan_code.startsWith('LARGE') ? 'Downgrade' : 'Subscribe'}}</div>
             </div>
             <!-- <div
                 style="left: 47px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
@@ -130,7 +133,7 @@
               {{ getPriceByCode('LARGE').value }}
             </div>
             <div v-if="!downgradeDate" class="plan-btn-c" @click="paySubscription('LARGE')">
-              <div class="btn">{{activeSubscription.plan_code.startsWith('LARGE') ? 'Renew' : 'Get started now'}}</div>
+              <div class="btn">{{activeSubscription.plan_code.startsWith('LARGE') ? 'Extend' : 'Subscribe'}}</div>
             </div>
             <!-- <div
                 style="left: 47px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
@@ -334,12 +337,16 @@ const getPriceByCode = (planCode: string) => computed(() => {
       return 'Free'
     case 'MEDIUM':
     case 'MEDIUM-2':
-      val = parseFloat(CONFIG.MEDIUM_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
-      return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
+      //val = parseFloat(CONFIG.MEDIUM_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
+      //return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
+      val = parseInt(CONFIG.MEDIUM_PRICE);
+      return isNaN(val) ? '' : val  + ' sc';
     case 'LARGE':
     case 'LARGE-2':
-      val = parseFloat(CONFIG.LARGE_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
-      return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
+      //val = parseFloat(CONFIG.LARGE_PRICE)/walletsStore.exchangeRateSC[settings?.currency||''];
+      //return isNaN(val) ? '' : val.toFixed(2)  + ' sc';
+      val = parseInt(CONFIG.LARGE_PRICE);
+      return isNaN(val) ? '' : val  + ' sc';
   }
   return '';
 })
@@ -772,20 +779,33 @@ body.dark {
   overflow: hidden;
 
   &:hover {
-    //background-color: #171717;
-    .plan-btn-c {
-      // border: 1px #BEA9EE solid !important;
-      // background-color: #BEA9EE !important;
-    }
     .btn {
-      // background-color: #BEA9EE !important;
-      // color: #381E72 !important;
+      color: #49454F;
     }
   }
 
   &.active {
-    // background: #171717;
-    // box-shadow: 0px 3px 3px #171717;
+    .btn {
+      color: #49454F;
+    }
+  }
+
+  /*
+  &:hover {
+    background-color: #171717;
+    .plan-btn-c {
+      border: 1px #BEA9EE solid !important;
+      background-color: #BEA9EE !important;
+    }
+    .btn {
+      background-color: #BEA9EE !important;
+      color: #381E72 !important;
+    }
+  }
+
+  &.active {
+    background: #171717;
+    box-shadow: 0px 3px 3px #171717;
     .plan-btn-c {
       border: 1px solid #938F99;
       color: #D0BCFF;
@@ -795,26 +815,47 @@ body.dark {
     }
 
     &:hover{
-      // background-color: #F5F5F5 !important;
-      // .plan-title, .plan-descr, .plan-period, .plan-vol{
-      //   color: #49454F;
-      // }
+      background-color: #F5F5F5 !important;
+      .plan-title, .plan-descr, .plan-period, .plan-vol{
+        color: #49454F;
+      }
       .plan-price {
         color: #36343B;
       }
-      // .plan-btn-c {
-      //   border: 1px #4F378B solid;
-      //   background-color: #4F378B;
-      // }
-      // .btn {
-      //   color: #F5F5F5;
-      // }
+      .plan-btn-c {
+        border: 1px #4F378B solid;
+        background-color: #4F378B;
+      }
+      .btn {
+        color: #F5F5F5;
+      }
     }
   }
+  */
 }
 
 .plan-col-c.plan-trial {
   background: #73B991;
+
+  &.active {
+    .btn {
+      cursor: not-allowed;
+    }
+    .plan-btn-c {
+      cursor: not-allowed;
+    }
+  }
+  &.expired {
+    .btn {
+      color: #49454F;
+      cursor: not-allowed;
+    }
+    .plan-btn-c {
+      border: 3px solid #E4B858;
+      background: #D06B57;
+      cursor: not-allowed;
+    }
+  }
 
   .plan-btn-c {
     border: 3px solid #D06B57;
@@ -823,6 +864,13 @@ body.dark {
 }
 .plan-col-c.plan-medium {
   background: #D06B57;
+
+  &.active {
+    .btn {
+      color: #F5F5F5;
+    }
+  }
+
   .plan-btn-c {
     border: 3px solid #E4B858;
     background: #8AA8AC;
@@ -830,6 +878,16 @@ body.dark {
 }
 .plan-col-c.plan-large {
   background: #E4B858;
+  &.active:hover {
+    background: #73B991;
+    .plan-btn-c {
+      border: 3px solid #D06B57;
+      background: #E4B858;
+    }
+    .btn {
+      color: #49454F;
+    }
+  }
   .plan-btn-c {
     border: 3px solid #D06B57;
     background: #73B991;
@@ -914,7 +972,7 @@ body.dark {
 
   .btn {
     text-align: center;
-    color: #49454F;
+    color: #F4EEE6;
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
