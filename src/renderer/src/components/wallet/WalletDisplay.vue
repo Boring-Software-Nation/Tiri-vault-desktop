@@ -69,7 +69,7 @@
       <div class="flex justify-center mt-4">
         <div class="plan-c">
 
-          <div class="plan-col-c plan-trial" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL'), 'expired':activeSubscription.plan_code && !activeSubscription.plan_code.startsWith('TRIAL')}">
+          <div class="plan-col-c plan-trial" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL'), 'expired':trialUsed && !activeSubscription.plan_code.startsWith('TRIAL')}">
             <div class="plan-title">{{ getNameByCode('TRIAL') }}</div>
             <div class="plan-period">for 1 month</div>
             <div class="plan-descr">Just a free trial to test functionality</div>
@@ -77,8 +77,11 @@
               {{ getPriceByCode('TRIAL').value }}
             </div>
             <div class="plan-vol">{{ getVolByCode('TRIAL') }}</div>
-            <div v-if="activeSubscription.plan_code" class="plan-btn-c">
-              <div class="btn">{{activeSubscription.plan_code.startsWith('TRIAL') ? 'Active' : 'Trial ended'}}</div>
+            <div v-if="activeSubscription.plan_code.startsWith('TRIAL')" class="plan-btn-c">
+              <div class="btn">{{'Active'}}</div>
+            </div>
+            <div v-else-if="trialUsed" class="plan-btn-c">
+              <div class="btn">{{activeSubscription.plan_code ? 'Not available' : 'Trial ended'}}</div>
             </div>
             <div v-else class="plan-btn-c" @click="paySubscription('TRIAL')">
               <div class="btn">{{'Subscribe'}}</div>
@@ -226,7 +229,7 @@ const modal = ref(''), selectedTransaction = ref(null), showMore = ref(false), s
     addresses = ref([]), current = ref(0);
 
 const userStore = useUserStore();
-const {userSubscriptions, activeSubscription} = storeToRefs(userStore)
+const {userSubscriptions, activeSubscription, trialUsed} = storeToRefs(userStore)
 const {loadSubscriptions, loadUsage} = userStore;
 
 const {toClipboard} = useClipboard()

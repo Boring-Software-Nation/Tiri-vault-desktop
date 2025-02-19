@@ -6,6 +6,7 @@ import {User} from "~/types/users";
 import setAuthorizationToken from "~/plugins/set-authorization-token";
 import {subscriptions, usage} from "~/services/backend";
 import {useWalletsStore} from "~/store/wallet";
+import { CONFIG } from "~/env";
 
 export const userStorage = new Storage<User>('user')
 
@@ -17,6 +18,7 @@ export const useUserStore = defineStore('user', () => {
   const userSubscriptions = ref(null);
   const userUsage = ref(null);
   const wasLogout = ref(false);
+  const trialUsed = ref(true);
 
   function updateUser (userData?: User | null) {
     if (userData === undefined || userData === null) {
@@ -55,6 +57,25 @@ export const useUserStore = defineStore('user', () => {
   const loadSubscriptions = async (walletId) => {
     const {data} = await subscriptions(walletId) as any
     userSubscriptions.value = data;
+    loadTrialUsed();
+  }
+
+  const loadTrialUsed = async () => {
+    const token = user.value?.token;
+    if (!token) return;
+    const r = await fetch(`${CONFIG.API_HOST}/api/trialUsed`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${token}`,
+      },
+    });
+    try {
+      const j = await r.json();
+      console.log('Trial used:', j);
+      trialUsed.value = j;
+    } catch (e) {
+      console.error('Error getting trial status:', e);
+    }  
   }
 
   const loadUsage = async (walletId) => {
@@ -76,6 +97,7 @@ export const useUserStore = defineStore('user', () => {
     userSubscriptions,
     activeSubscription,
     loadSubscriptions,
+    trialUsed,
     userUsage,
     loadUsage,
     userLogout,
