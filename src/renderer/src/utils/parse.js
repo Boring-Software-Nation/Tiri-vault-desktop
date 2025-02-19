@@ -1,10 +1,22 @@
 import { BigNumber } from 'bignumber.js';
 
 export function parseNumberString(str, precision = new BigNumber(1)) {
-	const decimalSep = (1.1).toLocaleString().substring(1, 2),
-		repRegex = new RegExp(`[^0-9${decimalSep}]`, 'g');
+	const pointsCount = str[Symbol.iterator]().reduce((acc, char) => {
+		if (char === '.')
+			acc++;
+		return acc;
+	}, 0);
 
-	let num = new BigNumber(str.replace(repRegex, '').replace(decimalSep, '.'), 10);
+	let num;
+
+	if (pointsCount === 1) {
+		const repRegex = new RegExp(`[^0-9\.]`, 'g');
+		num = new BigNumber(str.replace(repRegex, ''), 10);
+	} else {
+		const decimalSep = (1.1).toLocaleString().substring(1, 2);
+		const repRegex = new RegExp(`[^0-9${decimalSep}]`, 'g');
+		num = new BigNumber(str.replace(repRegex, '').replace(decimalSep, '.'), 10);
+	}
 
 	if (num.isNaN() || !num.isFinite())
 		num = new BigNumber(0);
