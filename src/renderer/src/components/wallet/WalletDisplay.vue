@@ -101,7 +101,7 @@
             </div> -->
           </div>
 
-          <div class="plan-col-c plan-medium" :class="{'active':activeSubscription.plan_code.startsWith('MEDIUM')}">
+          <div class="plan-col-c plan-medium" :class="{'active':activeSubscription.plan_code.startsWith('MEDIUM'), 'pending':downgradeDate!==''}">
             <div class="plan-title">{{ getNameByCode('MEDIUM') }}</div>
             <div class="plan-period">/month</div>
             <div class="plan-descr">Ideal for individuals who need small <br/>to store small amount <br/>of data.</div>
@@ -109,7 +109,10 @@
               {{ getPriceByCode('MEDIUM').value }}
             </div>
             <div v-if="!downgradeDate" class="plan-btn-c" @click="paySubscription('MEDIUM')">
-              <div class="btn">{{activeSubscription.plan_code.startsWith('MEDIUM') ? 'Extend' : activeSubscription.plan_code.startsWith('LARGE') ? 'Downgrade' : 'Subscribe'}}</div>
+              <div class="btn">{{activeSubscription.plan_code.startsWith('MEDIUM') ? 'Active' : activeSubscription.plan_code.startsWith('LARGE') ? 'Downgrade' : 'Subscribe'}}</div>
+            </div>
+            <div v-else class="plan-btn-c">
+              <div class="btn">{{'Pending'}}</div>
             </div>
             <!-- <div
                 style="left: 47px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
@@ -135,8 +138,8 @@
             <div class="plan-price" :class="{'active':activeSubscription.plan_code.startsWith('LARGE')}">
               {{ getPriceByCode('LARGE').value }}
             </div>
-            <div v-if="!downgradeDate" class="plan-btn-c" @click="paySubscription('LARGE')">
-              <div class="btn">{{activeSubscription.plan_code.startsWith('LARGE') ? 'Extend' : 'Subscribe'}}</div>
+            <div class="plan-btn-c" @click="paySubscription('LARGE')">
+              <div class="btn">{{activeSubscription.plan_code.startsWith('LARGE') ? 'Active' : activeSubscription.plan_code.startsWith('MEDIUM') ? 'Upgrade' : 'Subscribe'}}</div>
             </div>
             <!-- <div
                 style="left: 47px; top: 230px; position: absolute; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
@@ -395,6 +398,9 @@ const onQueueWallet = () => {
 
 
 const paySubscription = (subscription) => {
+  if (activeSubscription.value.plan_code && activeSubscription.value.plan_code.startsWith(subscription))
+    return;
+
   subscriptionName.value = subscription;
   console.log(subscriptionName.value)
   modal.value = 'send';
@@ -864,9 +870,13 @@ body.dark {
 .plan-col-c.plan-medium {
   background: #D06B57;
 
-  &.active {
+  &.active, &.pending {
     .btn {
       color: #F5F5F5;
+      cursor: not-allowed;
+    }
+    .plan-btn-c {
+      cursor: not-allowed;
     }
   }
 
@@ -882,9 +892,11 @@ body.dark {
     .plan-btn-c {
       border: 3px solid #D06B57;
       background: #E4B858;
+      cursor: not-allowed;
     }
     .btn {
       color: #49454F;
+      cursor: not-allowed;
     }
   }
   .plan-btn-c {
