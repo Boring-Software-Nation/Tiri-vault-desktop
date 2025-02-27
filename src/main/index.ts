@@ -30,7 +30,7 @@ if (!(is.dev && process.env['ELECTRON_RENDERER_URL'])) {
 
 type StoreType = {
   //syncDirectory?: string
-  directories: { [key: string]: string }
+  directories: { [key: string]: { path: string, synced: boolean } }
 };
 
 // is.dev = true; // FIXME: don't forget to remove this line for release build
@@ -110,6 +110,9 @@ app.whenReady().then(() => {
   ipcMain.on('renameFile', (event, oldPath, newPath) => renameFile(oldPath, newPath))
   ipcMain.on('getFileTree', () => getFileTree())
   ipcMain.on('removeFile', (event, path) => removeFile(path))
+  ipcMain.on('directorySynced', (event, walletId) => {
+    store.set(`directories.${walletId}.synced`, true);
+  });
 
   const mainWindow = createWindow();
 
@@ -183,9 +186,10 @@ app.on('window-all-closed', () => {
 
 function getDirectory(walletId: string) {
   currentWalletId = walletId;
-  directory = store.get('directories')[walletId];
-  sendMessage('directorySelected', directory);
+  const directoryItem = store.get('directories')[walletId];
+  directory = directoryItem?.path || '';
   if (directory) {
+    sendMessage('directorySelected', directory, directoryItem.synced);
     // if (isFileTreeReady())
     //   sendMessage('filetree', getTree()?.model)
     // else
@@ -204,8 +208,8 @@ function chooseDirectory() {
       }
       directory = result.filePaths[0];
       //store.set('syncDirectory', directory);
-      store.set(`directories.${currentWalletId}`, directory);
-      sendMessage('directorySelected', result.filePaths[0]);
+      store.set(`directories.${currentWalletId}`, { path: directory, synced: false });
+      sendMessage('directorySelected', result.filePaths[0], false);
       readDirectory(directory);
     })
 }

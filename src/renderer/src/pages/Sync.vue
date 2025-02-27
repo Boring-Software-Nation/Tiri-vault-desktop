@@ -16,6 +16,7 @@ import { io, Socket } from 'socket.io-client';
 
 const state = reactive({
   directory: '',
+  directorySynced: false,
   messages: [] as string[],
 });
 
@@ -210,8 +211,9 @@ const restartSync = () => {
 const chooseDirectory = () => ipcSend('chooseDirectory')
 const openDirectory = () => ipcSend('openDirectory')
 
-ipcOn('directorySelected', async (event, result) => {
-  state.directory = result;
+ipcOn('directorySelected', async (event, path, synced) => {
+  state.directory = path;
+  state.directorySynced = synced;
 })
 
 //ipcSend('getDirectory');
@@ -329,7 +331,7 @@ const processTrees = async () => {
     return;
   }
 
-  diffs = diffTrees(localTree.value, remoteTree.value);
+  diffs = diffTrees(localTree.value, remoteTree.value, !state.directorySynced);
   console.log('Upload diff:', diffs.upload);
   console.log('Remove diff:', diffs.remove);
   console.log('Local remove diff:', diffs.localRemove);
@@ -504,6 +506,13 @@ const onDownloadFinished = async () => {
   storeTreeModel();
 
   await storeTreePromise;
+
+  if (stopping.value) {
+    running.value = false;
+    return;
+  }
+
+  ipcSend('directorySynced', currentWallet.value.id);
 
   state.messages.push('Synced');
   running.value = false;

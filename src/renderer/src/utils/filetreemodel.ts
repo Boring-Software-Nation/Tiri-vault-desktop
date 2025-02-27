@@ -29,7 +29,8 @@ const parse = parseFileTreeModel; // shortcut
 
 export function diffTrees(
   tree1: FileTreeModel,
-  tree2: FileTreeModel
+  tree2: FileTreeModel,
+  mergeMode: boolean = false
 ): FileDiffs {
   const upload: FileTreeModel[] = [];
   const remove: FileTreeModel[] = [];
@@ -69,7 +70,7 @@ export function diffTrees(
       const parent2 = tree2?.first(n => n.model.path === parentPath);
       const parent1 = tree1?.first(n => n.model.path === parentPath);
       console.log('missed node1 case:', parentPath, parent1, parent2);
-      if (parent1 && parent2 && parent1.model.mtime > parent2.model.mtime) {
+      if (parent1 && parent2 && parent1.model.mtime > parent2.model.mtime && !mergeMode) {
         remove.push(node2);
         merged.first(n => n.model.path === node2.model.path)?.drop();
       } else {
@@ -83,7 +84,7 @@ export function diffTrees(
       const parent1 = tree1?.first(n => n.model.path === parentPath);
       const parent2 = tree2?.first(n => n.model.path === parentPath);
       console.log('missed node2 case:', parentPath, parent1, parent2);
-      if (parent1 && parent2 && parent1.model.mtime < parent2.model.mtime) {
+      if (parent1 && parent2 && parent1.model.mtime < parent2.model.mtime && !mergeMode) {
         localRemove.push(node1);
       } else {
         upload.push(node1);
