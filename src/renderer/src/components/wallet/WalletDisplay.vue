@@ -19,23 +19,29 @@
 
       <div class="flex justify-center">
         <div class="wallet-balance-c">
-          <div><span class="wallet-siacoin-balance" v-html="formatSiacoinString(siacoinBalance)"></span><span
-              class="wallet-display-balance" v-html="formatCurrencyString(siacoinBalance)"></span></div>
-          <siafund-balance :siafunds="siafundBalance" :claim="claimBalance" :wallet="wallet"
-                            v-if="siafundBalance.gt(0)"/>
-          <div class="wallet-plan-container" v-if="subscriptionNameByCode">
-            <div class="wallet-plan-row">
-              <div class="wallet-plan-left">
-                <span class="wallet-plan-caption">Plan: </span><span class="wallet-plan-name">{{ subscriptionNameByCode }}</span>&nbsp;<span class="wallet-plat-vol">({{ subscriptionVolByCode }})</span>
-              </div>
-              <div class="wallet-plan-right">
-                <span v-if="nextPaymentDate" class="wallet-plan-caption"> Expires: </span><span class="wallet-plan-name">{{ nextPaymentDate}}</span>
+          <div class="wallet-balance-inner-c">
+            <div><span class="wallet-siacoin-balance" v-html="formatSiacoinString(siacoinBalance)"></span><span
+                class="wallet-display-balance" v-html="formatCurrencyString(siacoinBalance)"></span></div>
+            <siafund-balance :siafunds="siafundBalance" :claim="claimBalance" :wallet="wallet"
+                              v-if="siafundBalance.gt(0)"/>
+            <div class="wallet-plan-container" v-if="subscriptionNameByCode">
+              <div class="wallet-plan-row">
+                <div class="wallet-plan-left">
+                  <span class="wallet-plan-caption">Plan: </span><span class="wallet-plan-name">{{ subscriptionNameByCode }}</span>&nbsp;<span class="wallet-plat-vol">({{ subscriptionVolByCode }})</span>
+                </div>
+                <div class="wallet-plan-right">
+                  <div>
+                    <span v-if="nextPaymentDate" class="wallet-plan-caption"> Expires: </span><span class="wallet-plan-name">{{ nextPaymentDate}}</span>
+                  </div>
+                  <div>
+                    <span v-if="downgradeDate" class="wallet-plan-caption"> Downgrade: </span><span v-if="downgradeDate" class="wallet-plan-name">{{ downgradeDate}}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <span v-if="downgradeDate" class="wallet-plan-caption"> Downgrade: </span><span v-if="downgradeDate" class="wallet-plan-name">{{ downgradeDate}}</span>
-          </div>
-          <div v-else>
-            <span class="wallet-plan-caption">No active subscription</span>
+            <div v-else>
+              <span class="wallet-plan-caption">No active subscription</span>
+            </div>
           </div>
         </div>
       </div>
@@ -653,11 +659,16 @@ body.dark {
   padding: 16px;
   justify-content: flex-start;
   display: inline-flex;
-  flex-direction: column;
+  align-items: center;
   overflow: hidden;
   border-radius: 12px;
   border: 3px solid #E4B858;
   background: #8AA8AC;
+}
+.wallet-balance-inner-c {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .wallet-siacoin-balance {
@@ -697,6 +708,12 @@ body.dark {
 }
 .wallet-plan-left {
   flex: 1;
+}
+.wallet-plan-right {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  white-space: nowrap;
 }
 
 
