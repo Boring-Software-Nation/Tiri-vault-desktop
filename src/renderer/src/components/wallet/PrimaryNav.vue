@@ -58,13 +58,13 @@
         <div v-if="offline" class="connect-status">Offline</div>
       </transition>
 
-      <div :class="[!activeSubscription.plan_code ? 'invisible' : '']" class="w-[180px] h-14 pl-4 pr-6 py-4 justify-start items-center gap-3 inline-flex">
+      <div class="w-[180px] h-14 pl-4 pr-6 py-4 justify-start items-center gap-3 inline-flex">
         <div class="w-[140px] h-[23px] relative">
           <div class="w-[140px] h-1 left-0 top-[19px] absolute bg-neutral-700 rounded justify-start items-center inline-flex" :style="{'padding-right': currentUserUsagePercentageToPaggingRight+'%'}">
             <div class="w-full h-1 relative rounded" :class="stageColor"></div>
           </div>
-          <div class="w-[50px] h-3.5 left-[90px] top-0 absolute text-right text-xs font-normal font-['Roboto'] leading-tight tracking-tight">{{planLimit}}</div>
-          <div class="w-[50px] h-3.5 left-0 top-0 absolute text-xs font-normal font-['Roboto'] leading-tight tracking-tight">{{currentUserUsage}}</div>
+          <div class="w-[50px] h-3.5 left-[90px] top-0 absolute text-right text-xs font-normal leading-tight tracking-tight text-nowrap">{{planLimit}}</div>
+          <div class="w-[50px] h-3.5 left-0 top-0 absolute text-xs font-normal leading-tight tracking-tight text-nowrap">{{currentUserUsage}}</div>
         </div>
       </div>
 
@@ -192,6 +192,7 @@ const path = computed(() =>route.path)
 console.log(path.value)
 
 const currentUserUsage = computed(() => {
+  if (!activeSubscription.value?.plan_code) return 'No subscription';
   return userUsage && userUsage.value && (userUsage.value as any).customer_usage ? filesize((userUsage.value as any).customer_usage.charges_usage[0].units) : '';
 });
 
@@ -227,7 +228,7 @@ const planLimit = computed(() => {
   } else if (planCode.startsWith('LARGE')) {
     return filesize(CONFIG.LARGE_PLAN_LIMIT * 1024 * 1024);
   }
-  return '';
+  return '0 TB';
 });
 
 const logout = async () => {
