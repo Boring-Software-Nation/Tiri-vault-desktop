@@ -21,16 +21,15 @@ const state = reactive({
 });
 
 const walletStore = useWalletsStore();
-const { allWallets, pushNotification, getSelectedWallet } = walletStore;
 const { currentWallet, getCurrentWalletId } = storeToRefs(walletStore);
 const userStore = useUserStore();
 const { loadUsage, loadSubscriptions } = userStore;
-const { user } = storeToRefs(userStore);
-const selectedWallet = ref(null);
+const { user, activeSubscription } = storeToRefs(userStore);
 
 const localTree = shallowRef<FileTreeModel>(null);
 const remoteTree = shallowRef<FileTreeModel>(null);
 
+const syncActive = ref(false);
 const running = ref(false);
 const stopping = ref(false);
 
@@ -59,7 +58,8 @@ const clearMessageHandlers = () => {
 }
 
 onMounted(() => {
-  selectedWallet.value = getSelectedWallet.value || null;
+  loadUsage(getCurrentWalletId.value)
+  loadSubscriptions(getCurrentWalletId.value)
 });
 
 onUnmounted(async () => {
@@ -88,10 +88,13 @@ watchEffect(async () => {
      return;
 
   if (user?.value?.token) {
-    loggedIn = true;
-    console.log('>>> starting')
-    startWebsocketClient();
-    ipcSend('getDirectory', currentWallet.value.id);
+    if (activeSubscription.value.plan_code) {
+      loggedIn = true;
+      syncActive.value = true;
+      console.log('>>> starting')
+      startWebsocketClient();
+      ipcSend('getDirectory', currentWallet.value.id);
+    }
   } else {
     await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
   }
@@ -208,6 +211,23 @@ const restartSync = () => {
   ipcSend('getFileTree');
 };
 
+const toggleSync = async () => {
+  if (syncActive.value) {
+    syncActive.value = false;
+    stopWebsocketClient();
+    if (running.value) {
+      await stopSync(StopReason.OTHER);
+    }
+  } else {
+    if (user.value?.token && activeSubscription.value.plan_code) {
+      syncActive.value = true;
+      startWebsocketClient();
+      ipcSend('getFileTree');
+    }
+  }
+}
+
+
 const chooseDirectory = () => ipcSend('chooseDirectory')
 const openDirectory = () => ipcSend('openDirectory')
 
@@ -268,7 +288,7 @@ ipcOn('filetree', async (event, filetree) => {
   localTree.value = parseFileTreeModel(filetree);
   console.log('Local tree:', localTree.value?.model);
   //state.messages.push(`Filetree: ${JSON.stringify(filetree)}`);
-  if (user.value?.token) {
+  if (user.value?.token && activeSubscription.value.plan_code) {
     fetchRemoteTree();
   }
 });
@@ -341,7 +361,16 @@ const processTrees = async () => {
   if (diffs.remove.length > 0) {
     await removeRemoteFiles(diffs.remove);
   }
-  uploadFiles(diffs.upload);
+
+  try {
+    await uploadFiles(diffs.upload);
+  } catch(error) {
+    console.error('Error:', error);
+    state.messages.push('Synchonization error, stopped.');
+    running.value = false;
+    syncActive.value = false;
+    stopWebsocketClient();
+  }
 }
 
 const removeRemoteFiles = async(diff:FileTreeModel[]) => {
@@ -1003,6 +1032,14 @@ ipcOn('fileRenamed', (event, err) => {
       <div class="action">
         <a target="_blank" rel="noreferrer" @click="chooseDirectory">Choose directory</a>
       </div>
+      <a class="start-stop-button" target="_blank" rel="noreferrer" @click="toggleSync">
+        <span v-if="syncActive" class="material-symbols-outlined" title="Pause synchronization">pause_circle</span>
+        <span v-else class="material-symbols-outlined" title="Start synchronization">not_started</span>
+      </a>
+    </div>
+    <div v-if="!activeSubscription.plan_code" class="warning">
+      <p>You need to have an active subscription to use this feature.</p>
+      <p>Go to <router-link :to="{ name: 'wallets' }">Account</router-link> to subscribe.</p>
     </div>
     <div class="messages">
       <ul>
@@ -1057,6 +1094,25 @@ ipcOn('fileRenamed', (event, err) => {
   border: 3px solid #D06B57;
 }
 
+.start-stop-button {
+  flex: 1;
+  text-align: right;
+  padding: 15px 15px 0 0;
+  cursor: pointer;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  color: #E4B857;
+}
+.material-symbols-outlined:hover {
+  color: #D06B57;
+}
+
 .directory {
   width: 100%;
   padding: 10px 20px 14px 20px;
@@ -1078,5 +1134,20 @@ ipcOn('fileRenamed', (event, err) => {
   height: 550px;
   width: 100%;
   overflow-y: auto;
+}
+
+.warning {
+  padding: 20px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+  color: #721c24;
+  margin-top: 20px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.warning a {
+  text-decoration: underline;
 }
 </style>
