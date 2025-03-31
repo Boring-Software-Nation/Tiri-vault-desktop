@@ -2,7 +2,7 @@
   <modal @close="$emit('close')" :overflow-hidden="true">
     <div class="text-center text-[#19cf86] text-2xl">Payment in progress...</div>
     <transition name="fade-top" mode="out-in" appear>
-      <transaction-setup class="transaction-step" :wallet="wallet" :subscription="subscription" v-if="step === 'setup'" key="setup" @built="onTransactionBuilt" @done="$emit('close')"/>
+      <transaction-setup class="transaction-step" :wallet="wallet" :subscription="subscription" :address="address" :amount="amount" v-if="step === 'setup'" key="setup" @built="onTransactionBuilt" @done="$emit('close')"/>
       <transaction-verify class="transaction-step" :wallet="wallet" :transaction="transaction" :subscription="subscription" v-else-if="step === 'verify'" key="verify" @done="$emit('close')" />
     </transition>
   </modal>
@@ -25,7 +25,9 @@ export default {
 
   const props = defineProps<{
     wallet: Wallet,
-    subscription: String
+    subscription?: String,
+    address?: string,
+    amount?: string
   }>();
 
   const { pushNotification } = useWalletsStore()

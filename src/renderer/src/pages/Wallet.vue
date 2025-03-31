@@ -12,7 +12,7 @@
             :wallets="allWallets"
             :active="selectedWallet"
             :key="currentWallet.id"
-            mode="subscription"
+            mode="wallet"
             @selected="onWalletSelected"/>
       </transition>
     </div>

@@ -65,21 +65,21 @@
         </div>
       </div>
 
-      <div class="flex justify-center mt-4">
+      <div v-if="mode === 'subscription'" class="flex justify-center mt-4">
         <div style="width: 521px; height: 37px; text-align: center"><span
             style="color: #49454F; font-size: 24px; font-weight: 400; line-height: 52px;">Powerful features under </span><span
             style="color: #73B991; font-size: 24px; font-weight: 400; line-height: 52px;">subscriptions</span>
         </div>
       </div>
 
-      <div class="flex justify-center mt-4">
+      <div v-if="mode === 'subscription'" class="flex justify-center mt-4">
         <div
             style="width: 531px; text-align: center; color: #49454F; font-size: 14px; font-weight: 400; line-height: 20px; letter-spacing: 0.25px;">
           Chose a plan that's right for you
         </div>
       </div>
 
-      <div class="flex justify-center mt-4">
+      <div v-if="mode === 'subscription'" class="flex justify-center mt-4">
         <div class="plan-c">
 
           <div class="plan-col-c plan-trial" :class="{'active':activeSubscription.plan_code.startsWith('TRIAL'), 'expired':trialUsed && !activeSubscription.plan_code.startsWith('TRIAL')}">
@@ -174,7 +174,8 @@
         </div>
       </div>
 
-      <div v-if="false" class="wallet-button-wrapper">
+      <!--
+      <div v-if="mode === 'wallet'" class="wallet-button-wrapper">
         <div class="wallet-buttons">
           <button class="btn wallet-btn" @click="modal='send'" v-if="wallet.type !== 'watch'">{{ 'Send' }}</button>
           <button class="btn wallet-btn" @click="modal='receive'">{{ 'Receive' }}</button>
@@ -195,7 +196,10 @@
           </div>
         </div>
       </div>
+      -->
     </div>
+
+    <wallet-buttons v-if="mode === 'wallet'" :wallet="wallet" />
 
     <transition name="fade" mode="out-in" appear>
       <send-siacoin-modal v-if="modal === 'send'"
@@ -228,6 +232,7 @@ import {useWalletsStore} from "~/store/wallet";
 import {getLastWalletAddresses} from '~/store/db';
 import SelectWalletModal from "~/components/wallet/modals/SelectWalletModal.vue";
 import SendSiacoinModal from './modals/SendSiacoinModal.vue';
+import WalletButtons from './WalletButtons.vue';
 import {CONFIG} from "~/env";
 
 import {useUserStore} from "~/store/user";
@@ -238,7 +243,8 @@ import {api} from "~/services";
 const props = defineProps<{
   wallets: Wallet[],
   wallet: Wallet,
-  active: boolean | null
+  active: boolean | null,
+  mode: string
 }>();
 
 const modal = ref(''), selectedTransaction = ref(null), showMore = ref(false), subscriptionName = ref(''),
