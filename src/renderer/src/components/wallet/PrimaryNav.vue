@@ -109,7 +109,7 @@
         </menu-item>
       </router-link>
 
-      <router-link :to="{ name: 'files' }" class="menu-item">
+      <router-link :to="{ name: 'files' }" class="menu-item" v-if="false">
         <menu-item :is-active="path==='/files'">
           <div class="svg-c">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" >

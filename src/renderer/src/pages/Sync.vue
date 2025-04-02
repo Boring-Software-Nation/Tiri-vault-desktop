@@ -396,11 +396,13 @@ const removeRemoteFiles = async(diff:FileTreeModel[]) => {
 }
 
 const uploadFiles = async (diff:FileTreeModel[]) => {
+  /*
   const r = await getObjects('/');
   if (r.files.length === 0) {
     await createFolder('', '');
   }
   await createFolder('/', '.sync');
+  */
 
   if (diff.length > 0)
     state.messages.push('Uploading files...');
@@ -417,7 +419,7 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
 
       if (node.model.type === 'directory' && node.model.path) {
         console.log('Dir:', node.model);
-        createFolder('/.sync', node.model.path);
+        //createFolder('/.sync', node.model.path);
         state.messages.push(`Folder: ${node.model.path}`);
       } else if (node.model.type === 'file') {
         console.log('File:', node.model);
@@ -899,6 +901,7 @@ const downloadItem = async () => {
   }
 
   state.messages.push(`Downloading file: ${item.model.path}`);
+  console.log('Downloading:', item.model.path);
   const data = await downloadObject(item.model.path);
   console.log('Fetched data:', data);
 
