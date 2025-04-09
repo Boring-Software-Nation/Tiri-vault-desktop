@@ -1,6 +1,6 @@
 <template>
   <div class="wallet-display">
-    <div class="wallet-balance">
+    <div class="wallet-balance" :class="{'info-only': mode === 'info-only'}">
       <div v-if="false" class="wallet-title">{{ name }}
         <button class="btn-select" @click="modal = 'wallet'">
           <font-awesome-icon icon="chevron-down"/>
@@ -47,7 +47,7 @@
       </div>
 
 
-      <div class="flex justify-center mt-4">
+      <div class="flex justify-center mt-4" v-if="mode !== 'info-only'">
         <div class="wallet-address-outer-c">
           <div class="wallet-address-inner-c">
             <div class="wallet-address-caption">{{ formatCurrentAddress }}</div>
@@ -583,6 +583,10 @@ const copyToClipboard = async () => {
 .wallet-balance {
   padding: 15px;
   overflow: hidden;
+
+  &.info-only {
+    padding: 0;
+  }
 }
 
 .wallet-btn {

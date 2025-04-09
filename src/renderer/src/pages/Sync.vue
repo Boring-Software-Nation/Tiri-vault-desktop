@@ -13,6 +13,7 @@ import { api } from "@renderer/services";
 import { onMessage as _onMessage, offMessage, sendMessage } from '~/hat-sh/';
 import { Buffer } from 'buffer';
 import { io, Socket } from 'socket.io-client';
+import WalletDisplay from "~/components/wallet/WalletDisplay.vue";
 
 const state = reactive({
   directory: '',
@@ -21,6 +22,7 @@ const state = reactive({
 });
 
 const walletStore = useWalletsStore();
+const { allWallets } = walletStore;
 const { currentWallet, getCurrentWalletId } = storeToRefs(walletStore);
 const userStore = useUserStore();
 const { loadUsage, loadSubscriptions } = userStore;
@@ -1029,6 +1031,18 @@ ipcOn('fileRenamed', (event, err) => {
 
 <template>
   <div class="sync-page">
+      <div class="wallets-detail">
+        <transition name="fade-top" mode="out-in">
+          <wallet-display
+              v-if="currentWallet"
+              :wallet="currentWallet"
+              :wallets="allWallets"
+              :active="currentWallet"
+              :key="currentWallet.id"
+              mode="info-only"/>
+        </transition>
+      </div>
+
     <div class="directory" v-if="state.directory"><a href="#" @click="openDirectory">{{ state.directory }}</a></div>
     <div class="directory" v-else>Directory not selected</div>
     <div class="actions">
@@ -1058,10 +1072,14 @@ ipcOn('fileRenamed', (event, err) => {
 .sync-page {
   display: flex;
   flex-direction: column;
-  padding: 20px 10px 20px 20px;
+  padding: 15px 10px 20px 20px;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+}
+
+.wallets-detail {
+  margin-left: -10px;
 }
 
 .actions {
@@ -1118,6 +1136,7 @@ ipcOn('fileRenamed', (event, err) => {
 
 .directory {
   width: 100%;
+  height: 65px;
   padding: 10px 20px 14px 20px;
   border-radius: 30px;
   border: 5px solid #E3CCA9;
