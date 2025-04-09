@@ -53,12 +53,20 @@
         </svg>
       </button>
 
-      <input type="text" class="address-input" placeholder="SC 0" v-model="amount" />
+      <div class="wallet-action-input-title">{{ "Amount" }}</div>
+      <div class="amount-control">
+        <div class="amount-input-c">
+          <input type="text" class="amount-input" placeholder="0 SC" v-model="amount" />
+          <div class="amount-cross"><span v-html="amountCross"></span></div>
+        </div>
+        <button class="btn btn-success btn-inline button-max" @click="setMaxAmount()">{{ "MAX" }}</button>
+      </div>
+      <div class="wallet-action-input-info">{{ "Available: " }}<span v-html="siacoinBalance"></span></div>
 
       <div class="spacer"></div>
 
       <div class="buttons">
-        <button class="btn btn-success btn-inline button-send" @click="modal = 'send'" :disabled="!isAmountCorrect()">{{ "Send" }}</button>
+        <button class="btn btn-success btn-inline button-send" @click="modal = 'send'" :disabled="!isAmountCorrect">{{ "Send" }}</button>
       </div>
     </div>
   </div>
@@ -80,21 +88,46 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import Wallet from "~/types/wallet";
 import SendSiacoinModal from './modals/SendSiacoinModal.vue';
+import BigNumber from "bignumber.js";
+import {formatPriceString, formatSiafundString, formatExchangeRate} from '~/utils/format';
+import { useWalletsStore } from "~/store/wallet";
 
 const props = defineProps<{
   wallet: Wallet,
 }>();
 
+const walletsStore = useWalletsStore();
+const {exchangeRateSC, exchangeRateSF, settings, scanQueue, queueWallet, pushNotification} = walletsStore;
+
 const modal = ref(''), address = ref(''), amount = ref('');
 
-const isAmountCorrect = () => {
+const isAmountCorrect = computed(() => {
   return !Number.isNaN(parseFloat(amount.value)) && parseFloat(amount.value) > 0;
+});;
+
+const siacoinBalance = computed(() => {
+  const format = formatPriceString(props.wallet.unconfirmedSiacoinBalance(), 2, 'SC', 1, props.wallet.precision());
+  return `${format.value} <span class="currency-display">${format.label}</span>`;
+});
+
+const amountCross = computed(() => {
+  if(isAmountCorrect.value) {
+    const format = formatPriceString(new BigNumber(parseFloat(amount.value)), 2, settings?.currency, exchangeRateSC[settings?.currency||''], 1);
+    return `${format.value} <span class="currency-display">${format.label}</span>`;
+  } else {
+    return `0.00 <span class="currency-display">${settings?.currency}</span>`;
+  }
+});
+
+const setMaxAmount = () => {
+  const format = formatPriceString(props.wallet.unconfirmedSiacoinBalance(), 2, 'SC', 1, props.wallet.precision());
+  amount.value = `${format.value}`;
 };
 
-const done = () => {
+const done = () => {  
   modal.value = '';
   address.value = '';
   amount.value = '';
@@ -230,8 +263,82 @@ const done = () => {
   letter-spacing: 0.1px;
 }
 
+.amount-control {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+
+  height: 71px;
+  padding: 10px 16px 10px 16px;
+  align-items: center;
+
+  border-radius: 5px;
+  border: 3px solid #E4B858;
+  background: rgba(138, 168, 172, 0.12);
+
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+.amount-input-c {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.amount-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #49454F;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 20px; /* 142.857% */
+  letter-spacing: 0.1px;
+
+  width: 300px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.amount-cross {
+  color: #938F99;
+  white-space: nowrap;
+  width: 300px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wallet-action-input-title {
+  color: #49454F;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 20px; /* 142.857% */
+  letter-spacing: 0.1px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+}
+.wallet-action-input-info {
+  color: #938F99;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 20px; /* 142.857% */
+  letter-spacing: 0.25px;
+  padding: 5px 0 5px 3px;
+}
+
+.button-max {
+  border-radius: 5px;
+  border: 3px solid #73B991;
+  background: #E4B858;
+  margin-right: 0 !important;
+}
+
 .button-send {
-  width: 343px;
+  width: 343px !important;
   border-radius: 5px;
   border: 5px solid #E4B858;
   background: #73B991;
