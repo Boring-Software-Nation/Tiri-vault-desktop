@@ -95,20 +95,26 @@ export default {
   align-items: center;
   justify-content: center;
   background: #191919;
-  border-radius: 8px;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+  //border-radius: 8px;
+  //box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+  border-radius: 10px;
+  border: 5px solid #73B991;
+  background: #D9D9D9;
+
   z-index: 1001;
 
   &.notification-success {
-    color: primary;
+    color: #73B991;
   }
 
   &.notification-warning {
-    color: warning-accent;
+    color: #D06B57;
+    border-color: #D06B57;
   }
 
   &.notification-danger {
-    color: negative-accent;
+    color: #D06B57;
+    border-color: #D06B57;
   }
 
   .notification-icon {
@@ -119,6 +125,11 @@ export default {
   .notification-content {
     flex: 1;
     overflow-wrap: break-word;
+    color: #49454F;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 20px; /* 100% */
   }
 }
 
