@@ -273,6 +273,10 @@ const logout = async () => {
     display: grid;
   }
   */
+
+  position: absolute;
+  height: 100%;
+  z-index: 1;
 }
 
 body.dark {

@@ -10,7 +10,7 @@
             v-if="currentWallet"
             :wallet="currentWallet"
             :wallets="allWallets"
-            :active="selectedWallet"
+            :active="true"
             :key="currentWallet.id"
             mode="wallet"
             @selected="onWalletSelected"/>
