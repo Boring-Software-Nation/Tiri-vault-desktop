@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <div v-if="modal === 'address'" class="wallet-action-modal modal-address">
+    <div v-if="modal === 'address' || modal === 'add-address'" class="wallet-action-modal modal-address">
       <button class="back-btn" @click="modal = ''">
         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
           <path d="M39 20C39 19.6516 39 19.4775 38.9784 19.3315C38.8491 18.4601 38.1649 17.7759 37.2935 17.6466C37.1475 17.625 36.9734 17.625 36.625 17.625H19.7531C15.6432 17.625 13.5883 17.625 13.0769 16.3904C12.5655 15.1557 14.0186 13.7027 16.9247 10.7966L21.6862 6.03501C21.9342 5.78703 22.0582 5.66305 22.1465 5.54379C22.6715 4.83467 22.6698 3.86531 22.1423 3.15805C22.0536 3.03911 21.9291 2.91556 21.6803 2.66846C21.433 2.42292 21.3094 2.30016 21.1904 2.2126C20.4832 1.69217 19.5193 1.69387 18.8139 2.2168C18.6952 2.30477 18.572 2.42798 18.3256 2.67439L3.82843 17.1716C2.49509 18.5049 1.82843 19.1716 1.82843 20C1.82843 20.8284 2.49509 21.4951 3.82843 22.8284L18.3249 37.3249C18.5672 37.5672 18.6884 37.6884 18.8048 37.7752C19.514 38.3037 20.486 38.3037 21.1952 37.7752C21.3116 37.6884 21.4328 37.5672 21.6751 37.3249C21.9173 37.0827 22.0384 36.9616 22.1251 36.8453C22.6534 36.1366 22.6538 35.1652 22.1262 34.4561C22.0396 34.3397 21.9186 34.2185 21.6766 33.9761L16.9099 29.2009C14.0096 26.2954 12.5594 24.8426 13.0712 23.6088C13.5829 22.375 15.6355 22.375 19.7409 22.375H36.625C36.9734 22.375 37.1475 22.375 37.2935 22.3534C38.1649 22.2241 38.8491 21.5399 38.9784 20.6685C39 20.5225 39 20.3484 39 20Z" />
@@ -39,10 +39,47 @@
 
       <input type="text" class="address-input" placeholder="Paste or enter the account address" v-model="address" />
 
+      <div class="tab-buttons">
+        <button class="btn btn-success btn-inline" :class="{'active': addressTab==='recent'}" @click="addressTab = 'recent'">{{ "Recent" }}</button>
+        <button class="btn btn-success btn-inline" :class="{'active': addressTab==='book'}" @click="addressTab = 'book'">{{ "Address book" }}</button>
+      </div>
+
+      <div v-if="addressTab === 'recent'" class="addressbook">
+        <AddressbookItem v-for="item in recents" :item="item" :key="'recent-'+item.address" @click="address = item.address" />
+      </div>
+      <div v-if="addressTab === 'book'" class="addressbook">
+        <AddressbookItem v-for="item in addressbook" :item="item" :key="'book-'+item.address" @click="address = item.address" />
+        <div class="buttons">
+          <button class="btn btn-success btn-inline" @click="openAddAddress()">{{ "Add a contact" }}</button>
+        </div>
+      </div>
+
       <div class="spacer"></div>
 
       <div class="buttons">
         <button class="btn btn-success btn-inline" @click="modal = 'amount'" :disabled="!address.trim()">{{ "Next" }}</button>
+      </div>
+    </div>
+
+    <div v-if="modal === 'add-address'" class="add-address-modal">
+      <div class="add-address-container">
+        <div class="add-address-header">
+          <div class="add-address-title">{{ "Add a new address" }}</div>
+          <button class="add-address-close" @click="modal = 'address'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#49454F"/>
+            </svg>
+          </button>
+        </div>
+        <div class="add-address-form">
+          <div class="new-address-label">{{ 'Name' }}</div>
+          <input type="text" class="new-address-input" placeholder="Enter contact address" v-model="addressName" />
+          <div class="new-address-label">{{ 'Address' }}</div>
+          <input type="text" class="new-address-input" placeholder="Enter contact address" v-model="address" />
+        </div>
+        <div class="buttons">
+          <button class="btn btn-success btn-inline" @click="addAddress()" :disabled="!canAddAddress">{{ "OK" }}</button>
+        </div>
       </div>
     </div>
 
@@ -122,7 +159,7 @@
 
       <div class="buttons">
         <button class="btn btn-success btn-inline button-reject" @click="done()">{{ "Reject" }}</button>
-        <button class="btn btn-success btn-inline button-sign" @click="modal = 'send'">{{ "Sign" }}</button>
+        <button class="btn btn-success btn-inline button-sign" @click="send()">{{ "Sign" }}</button>
       </div>
     </div>
 
@@ -153,12 +190,17 @@ import {formatPriceString, formatSiafundString, formatExchangeRate} from '~/util
 import { calculateFee, verifyAddress } from '~/utils/index.js';
 import { useWalletsStore } from "~/store/wallet";
 import { getLastWalletAddresses, getWalletAddresses } from '~/store/db';
+import addressbookDb, { AddressbookEntry } from '~/store/db/addressbook';
+import AddressbookItem from "./AddressbookItem.vue";
 
 const props = defineProps<{
   wallet: Wallet,
 }>();
 
 onBeforeMount(async () => {
+  recents.value = await addressbookDb.getRecents();
+  addressbook.value = await addressbookDb.getAddressbook();
+
   const loadedAddresses = await loadWalletAddresses(0);
 
   loadedAddresses.sort((a, b) => {
@@ -198,7 +240,47 @@ const currentAddress = computed(() => {
 const walletsStore = useWalletsStore();
 const { exchangeRateSC, settings, siaNetworkFees } = walletsStore;
 
-const modal = ref(''), address = ref(''), amount = ref(''), addresses = ref([]), current = ref(0), ownedAddresses = ref([] as any[]);
+const modal = ref(''), address = ref(''), amount = ref(''), addresses = ref([]);
+const current = ref(0), ownedAddresses = ref([] as any[]);
+const addressTab = ref('recent'), addressName = ref('');
+
+const recents = ref<AddressbookEntry[]>([]), addressbook = ref<AddressbookEntry[]>([]);
+
+const addRecent = (address: string) => {
+  addressbookDb.addRecent(address).then(() => {
+    return addressbookDb.getRecents().then((result) => {
+      recents.value = result;
+    });
+  });
+};
+
+const canAddAddress = computed(() => {
+  if (!address.value || address.value.length === 0)
+    return false;
+
+  if (!addressName.value || addressName.value.length === 0)
+    return false;
+
+  return true;
+});
+
+const addAddress = () => {
+  if (!canAddAddress.value)
+    return;
+
+  modal.value = 'address';
+
+  addressbookDb.addAddress(address.value, addressName.value).then(() => {
+    return addressbookDb.getAddressbook().then((result) => {
+      addressbook.value = result;
+    });
+  });
+};
+
+const openAddAddress = () => {
+  addressName.value = '';
+  modal.value = 'add-address';
+};
 
 const isAmountCorrect = computed(() => {
   return !Number.isNaN(parseFloat(amount.value)) && parseFloat(amount.value) > 0;
@@ -323,6 +405,11 @@ const setMaxAmount = () => {
   const fees:BigNumber = estimateFees(estimatedAmount);
   const format = formatPriceString(estimatedAmount.minus(fees), 2, 'SC', 1, props.wallet.precision());
   amount.value = `${format.value}`;
+};
+
+const send = () => {
+  addRecent(address.value);
+  modal.value = 'send';
 };
 
 const done = () => {  
@@ -467,6 +554,107 @@ const done = () => {
   font-weight: 500;
   line-height: 20px; /* 142.857% */
   letter-spacing: 0.1px;
+}
+
+
+.tab-buttons {
+  display: flex;
+  flex-direction: row;
+  grid-gap: 60px;
+  align-items: left;
+  width: 100%;
+  margin: 15px 0;
+
+  .btn {
+    background: transparent;
+    border: none;
+    border: 3px solid transparent;
+
+    &:not(:hover) {
+      box-shadow: none;
+    }
+
+    &.active {
+      border: 3px solid #8AA8AC;
+    }
+  }
+}
+
+.addressbook {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 200px;
+
+  .buttons {
+    border-top: 1px solid #938F99;
+    padding-top: 10px;
+  }
+}
+
+.add-address-modal {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  background: rgba(228, 184, 88, 0.50);
+  padding: 180px 40px 100px 40px;
+}
+.add-address-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  border: 5px solid #73B991;
+  background: #E3CCA9;
+
+  .buttons {
+    padding-top: 10px;
+  }
+}
+.add-address-header {
+  display: flex;
+  flex-direction: row;
+  height: 72px;
+  padding: 0 16px;
+  border-bottom: 1px solid #938F99;
+}
+.add-address-title {
+  flex: 1;
+  color: #49454F;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 72px;
+  letter-spacing: 0.5px;
+}
+.add-address-form {
+  padding: 10px 69px;
+  display: flex;
+  flex-direction: column;
+}
+.new-address-label {
+  color: #272626;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 24px; /* 150% */
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+}
+.new-address-input {
+  border-radius: 5px;
+  border: 3px solid #568BA4;
+  width: 100%;
+  background: transparent;
+  padding: 8px;
+  color: #322F3A;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: 20px; /* 142.857% */
+  letter-spacing: 0.25px;
 }
 
 .amount-control {

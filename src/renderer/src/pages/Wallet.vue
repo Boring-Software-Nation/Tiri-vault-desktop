@@ -96,6 +96,10 @@ const logout = async () => {
   }
 }
 
+.wallet-display {
+  grid-gap: 0;
+}
+
 .wallets-detail {
   height: 100%;
   overflow: hidden;

@@ -10,7 +10,7 @@
             v-if="currentWallet"
             :wallet="currentWallet"
             :wallets="allWallets"
-            :active="selectedWallet"
+            :active="selectedWallet && selectedWallet.id === currentWallet.id"
             :key="currentWallet.id"
             mode="subscription"
             @selected="onWalletSelected"/>
@@ -32,7 +32,7 @@ const { updateUser, userLogout } = userStore;
 const {allWallets, pushNotification, getSelectedWallet, lockWallets} = store;
 const { currentWallet, getCurrentWalletId } = storeToRefs(useWalletsStore())
 const {user} = storeToRefs(userStore)
-const selectedWallet = ref(null)
+const selectedWallet = ref(null as any)
 
 onMounted(() => {
   selectedWallet.value = getSelectedWallet.value || null;

@@ -1037,7 +1037,7 @@ ipcOn('fileRenamed', (event, err) => {
               v-if="currentWallet"
               :wallet="currentWallet"
               :wallets="allWallets"
-              :active="currentWallet"
+              :active="true"
               :key="currentWallet.id"
               mode="info-only"/>
         </transition>
