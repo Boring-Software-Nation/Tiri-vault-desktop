@@ -72,7 +72,9 @@ export interface Txn {
 
   const props = defineProps<{
     wallet: Wallet,
-    subscription: String
+    subscription?: String,
+    address?: string,
+    amount?: string
   }>();
 
   interface Emits {
@@ -101,9 +103,16 @@ export interface Txn {
   onMounted(async () => {
     try {
 
-      subscriptionSettings = await api.service.settings(props.wallet)
-      if (subscriptionSettings.data.pay_address) {
-        recipientAddress.value = subscriptionSettings.data.pay_address
+      if (typeof props.address === 'string' && props.address.length > 0) {
+        recipientAddress.value = props.address;
+        txtSiacoin.value.value = parseFloat(''+props.amount); // /walletsStore.exchangeRateSC[settings?.value?.currency||''];
+        onChangeSiacoin();
+        console.log('!!!! amount', props.amount, txtSiacoin.value.value)
+      } else {
+        subscriptionSettings = await api.service.settings(props.wallet)
+        if (subscriptionSettings.data.pay_address) {
+          recipientAddress.value = subscriptionSettings.data.pay_address
+        }
       }
 
       onFormatValues();
@@ -379,6 +388,7 @@ export interface Txn {
         feeAddress = networkFees.value.api.address,
         change = added.minus(fees.value).minus(sendAmount.value);
 
+    // console.log('???', inputs.value, added.value, fees.value, sendAmount.value, change.value)
     if (added.lt(sendAmount.value.plus(fees.value)))
       throw new Error('not enough confirmed funds to create transaction');
 
@@ -482,23 +492,29 @@ export interface Txn {
     sending.value = true;
 
     try {
-      const subscribeResult = await subscribeUser(props.wallet.id, props.subscription, recipientAddress.value, txtSiacoin.value.value) as any
-      const fullSubscriptionPrice = txtSiacoin.value.value;
+      if (typeof props.subscription === 'string' && props.subscription.length > 0) {
+        const subscribeResult = await subscribeUser(props.wallet.id, props.subscription, recipientAddress.value, txtSiacoin.value.value) as any
+        const fullSubscriptionPrice = txtSiacoin.value.value;
 
-      console.log('subscribeResult', subscribeResult, 'fullSubscriptionPrice', fullSubscriptionPrice)
-      txtSiacoin.value.value = ''+subscribeResult.data.user.total_to_pay/walletsStore.exchangeRateSC[settings?.value?.currency||''];
+        console.log('subscribeResult', subscribeResult, 'fullSubscriptionPrice', fullSubscriptionPrice)
+        txtSiacoin.value.value = ''+subscribeResult.data.user.total_to_pay/walletsStore.exchangeRateSC[settings?.value?.currency||''];
 
-      onChangeSiacoin();
+        onChangeSiacoin();
 
-      emit('built', buildTransaction(fullSubscriptionPrice));
-    } catch (ex: any) {
+        emit('built', buildTransaction(fullSubscriptionPrice));
+      } else {
+        console.log('!!! buildTransaction', txtSiacoin.value.value, props.amount)
+        emit('built', buildTransaction(txtSiacoin.value.value));
+      }
+  } catch (ex: any) {
       console.error('onSendTxn', ex);
       pushNotification({
         severity: 'danger',
         message: ex.message
       });
 
-      await cancelSubscribeUser(props.wallet.id, props.subscription, recipientAddress.value, txtSiacoin.value.value)
+      if (typeof props.subscription === 'string' && props.subscription.length > 0)
+        await cancelSubscribeUser(props.wallet.id, props.subscription, recipientAddress.value, txtSiacoin.value.value)
 
       emit('done');
     } finally {
@@ -578,10 +594,11 @@ export interface Txn {
         return;
       } else if (newSubscription === 'MEDIUM') {
         txtSiacoin.value.value = parseFloat(''+subscriptionSettings.data.medium_plan_price)/walletsStore.exchangeRateSC[unref(settings)?.currency||''];
-      } else {
+      } else if (newSubscription && newSubscription.trim()) {
         txtSiacoin.value.value = parseFloat(''+subscriptionSettings.data.large_plan_price)/walletsStore.exchangeRateSC[unref(settings)?.currency||''];
       }
-      onChangeSiacoin();
+      if (newSubscription && newSubscription.trim())
+        onChangeSiacoin();
     }
   });
 
