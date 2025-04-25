@@ -40,7 +40,7 @@ function filetree(rootPath: string) {
       };
     } else {
       result.files++;
-      return { name: path.basename(nodePath), path: path.relative(rootPath, nodePath).replaceAll(path.sep, '/'), type: "file", mtime: stats.mtimeMs };
+      return { name: path.basename(nodePath), path: path.relative(rootPath, nodePath).replaceAll(path.sep, '/'), type: "file", mtime: stats.mtimeMs, size: stats.size };
     }
   }
 

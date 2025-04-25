@@ -26,7 +26,7 @@ const { allWallets } = walletStore;
 const { currentWallet, getCurrentWalletId } = storeToRefs(walletStore);
 const userStore = useUserStore();
 const { loadUsage, loadSubscriptions } = userStore;
-const { user, activeSubscription } = storeToRefs(userStore);
+const { user, userUsage, activeSubscription } = storeToRefs(userStore);
 
 const localTree = shallowRef<FileTreeModel>(null);
 const remoteTree = shallowRef<FileTreeModel>(null);
@@ -34,6 +34,7 @@ const remoteTree = shallowRef<FileTreeModel>(null);
 const syncActive = ref(false);
 const running = ref(false);
 const stopping = ref(false);
+const stoppedByLimits = ref(false);
 
 type QuueItem = {
   id: number,
@@ -223,12 +224,27 @@ const toggleSync = async () => {
   } else {
     if (user.value?.token && activeSubscription.value.plan_code) {
       syncActive.value = true;
+      stoppedByLimits.value = false;
+      state.messages = [];
       startWebsocketClient();
       ipcSend('getFileTree');
     }
   }
 }
 
+const inactivateSync = () => {
+  state.messages.push('Synchronization error, stopped.');
+  running.value = false;
+  syncActive.value = false;
+  stopWebsocketClient();
+}
+
+watch(activeSubscription, async (value, oldValue) => {
+  if (!syncActive.value && stoppedByLimits.value && value && value.plan_code && value.plan_code !== oldValue?.plan_code) {
+    await loadUsage(getCurrentWalletId.value);
+    toggleSync();
+  }
+});
 
 const chooseDirectory = () => ipcSend('chooseDirectory')
 const openDirectory = () => ipcSend('openDirectory')
@@ -236,6 +252,11 @@ const openDirectory = () => ipcSend('openDirectory')
 ipcOn('directorySelected', async (event, path, synced) => {
   state.directory = path;
   state.directorySynced = synced;
+  state.messages = [];
+  if (!syncActive.value && stoppedByLimits.value) {
+    await loadUsage(getCurrentWalletId.value);
+    toggleSync();
+  }
 })
 
 //ipcSend('getDirectory');
@@ -283,6 +304,9 @@ ipcOn('filetree', async (event, filetree) => {
   if (running.value) {
     await stopSync(StopReason.LOCAL);
     state.messages.push('Restarting sync due to local files changed...');
+  }
+  if (!syncActive.value) {
+    return;
   }
   running.value = true;
 
@@ -362,16 +386,19 @@ const processTrees = async () => {
   state.messages.push('Syncing...');
   if (diffs.remove.length > 0) {
     await removeRemoteFiles(diffs.remove);
+    await loadUsage(getCurrentWalletId.value);
+  }
+
+  if (!running.value) {
+    return;
   }
 
   try {
     await uploadFiles(diffs.upload);
+    await loadUsage(getCurrentWalletId.value);
   } catch(error) {
     console.error('Error:', error);
-    state.messages.push('Synchonization error, stopped.');
-    running.value = false;
-    syncActive.value = false;
-    stopWebsocketClient();
+    inactivateSync();
   }
 }
 
@@ -394,6 +421,7 @@ const removeRemoteFiles = async(diff:FileTreeModel[]) => {
     await Promise.all(deletionPromises);
   } catch (error) {
     console.error('Error deleting remote files:', error);
+    inactivateSync();
   }
 }
 
@@ -410,6 +438,7 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
     state.messages.push('Uploading files...');
 
   numberOfFiles = 0;
+  let totalFileSize = 0;
   queue.value = [];
   diff.forEach((item) => {
     item?.walk((node) => {
@@ -427,6 +456,7 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
         console.log('File:', node.model);
         state.messages.push(`Staging file for upload: ${node.model.path}`);
         numberOfFiles++;
+        totalFileSize += node.model.size;
         queue.value.push({id: queue.value.length+1, file: node.model});
       }
       return true;
@@ -439,6 +469,24 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
   }
 
   if (numberOfFiles > 0) {
+    const planCode = activeSubscription.value.plan_code;
+    // console.log('planCode', planCode)
+    // console.log('totalFileSize', totalFileSize)
+    // console.log('TRIAL_PLAN_LIMIT', CONFIG.TRIAL_PLAN_LIMIT * 1024 * 1024)
+    // console.log('usage', userUsage.value, (userUsage.value as any)?.customer_usage.charges_usage[0].units)
+    if (!planCode || ((planCode.startsWith('TRIAL')
+            && totalFileSize + parseInt((userUsage.value as any)?.customer_usage.charges_usage[0].units) > CONFIG.TRIAL_PLAN_LIMIT * 1024 * 1024) ||
+        (planCode.startsWith('MEDIUM')
+            && totalFileSize + parseInt((userUsage.value as any)?.customer_usage.charges_usage[0].units) > CONFIG.MEDIUM_PLAN_LIMIT * 1024 * 1024) ||
+        (planCode.startsWith('LARGE')
+            && totalFileSize + parseInt((userUsage.value as any)?.customer_usage.charges_usage[0].units) > CONFIG.LARGE_PLAN_LIMIT * 1024 * 1024))
+    ) {
+      inactivateSync();
+      state.messages.push('Storage limit exceeded, please upgrade your plan.');
+      stoppedByLimits.value = true;
+      return;
+    }
+
     currFile.value = 0;
     prepareFile();
   } else {
@@ -750,6 +798,7 @@ onMessage('hat-sh-response', async (message) => {
         const item = queue.value[queueIdx];
         console.log('Error uploading file:', item.file.path, params[1]);
         state.messages.push(`Error uploading file: ${item.file.path}: ${params[1]}`);
+        inactivateSync();
         /*const currentDir = getCurrentDir(props.currentWalletId, props.current.dirname);
 
         emitter.emit('vf-fetch', {
@@ -1056,6 +1105,10 @@ ipcOn('fileRenamed', (event, err) => {
     </div>
     <div v-if="!activeSubscription.plan_code" class="warning">
       <p>You need to have an active subscription to use this feature.</p>
+      <p>Go to <router-link :to="{ name: 'wallets' }">Account</router-link> to subscribe.</p>
+    </div>
+    <div v-if="stoppedByLimits" class="warning">
+      <p>Storage limit exceeded, please upgrade your plan.</p>
       <p>Go to <router-link :to="{ name: 'wallets' }">Account</router-link> to subscribe.</p>
     </div>
     <div class="messages">

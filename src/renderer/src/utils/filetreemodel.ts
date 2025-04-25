@@ -5,6 +5,7 @@ export type FileTreeNode = {
   path: string,
   type: 'file'|'directory',
   mtime: number,
+  size?: number,
   hash?: string,
   children?: FileTreeNode[]
 }
