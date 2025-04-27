@@ -25,7 +25,7 @@ const walletStore = useWalletsStore();
 const { allWallets } = walletStore;
 const { currentWallet, getCurrentWalletId } = storeToRefs(walletStore);
 const userStore = useUserStore();
-const { loadUsage, loadSubscriptions } = userStore;
+const { loadUsage, loadSubscriptions, userLogout } = userStore;
 const { user, userUsage, activeSubscription } = storeToRefs(userStore);
 
 const localTree = shallowRef<FileTreeModel>(null);
@@ -261,6 +261,14 @@ ipcOn('directorySelected', async (event, path, synced) => {
 
 //ipcSend('getDirectory');
 
+ipcOn('quit', async (event) => {
+  console.log('Quit event received');
+  if (running.value) {
+    await stopSync(StopReason.OTHER);
+  }
+  await userLogout();
+  ipcSend('quit');
+});
 
 const chunkWaiters = new Map();
 

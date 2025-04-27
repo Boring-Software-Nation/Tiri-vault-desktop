@@ -83,6 +83,15 @@ function createWindow(): BrowserWindow {
   return mainWindow;
 }
 
+let quitTimeout:NodeJS.Timeout|null = null;
+
+function quit() {
+  sendMessage('quit');
+  quitTimeout = setTimeout(() => {
+    app.quit();
+  }, 1500);
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -97,7 +106,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
+  // IPC handlers
   ipcMain.on('chooseDirectory', () => chooseDirectory())
   ipcMain.on('openDirectory', () => openDirectory())
   ipcMain.on('getDirectory', (event, walletId) => getDirectory(walletId));
@@ -112,6 +121,14 @@ app.whenReady().then(() => {
   ipcMain.on('removeFile', (event, path) => removeFile(path))
   ipcMain.on('directorySynced', (event, walletId) => {
     store.set(`directories.${walletId}.synced`, true);
+  });
+
+  ipcMain.on('quit', () => {
+    if (quitTimeout) {
+      clearTimeout(quitTimeout);
+      quitTimeout = null;
+    }
+    app.quit();
   });
 
   const mainWindow = createWindow();
@@ -136,7 +153,7 @@ app.whenReady().then(() => {
     {
       label: 'Quit',
       click: () => {
-        app.quit();
+        quit();
       },
     },
   ]);
@@ -163,7 +180,7 @@ app.whenReady().then(() => {
 
   app.on('second-instance', (event, argv) => {
     if (argv.includes('--quit')) {
-      app.quit();
+      quit();
     } else if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       if (!mainWindow.isVisible()) mainWindow.show();
@@ -177,7 +194,7 @@ app.whenReady().then(() => {
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    quit()
   }
 })
 
