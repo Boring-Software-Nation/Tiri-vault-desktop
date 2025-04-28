@@ -10,6 +10,9 @@
     <setup-page v-else-if="!setup" />
     <unlock-wallet v-else-if="!isAuthorized" />
   </div>
+
+  <feedback v-if="modal === 'feedback'" @close="modal = ''" />
+
   <notification-queue />
 </template>
 
@@ -23,6 +26,7 @@
   import {storeToRefs} from "pinia";
   import { computed, provide, ref } from "vue";
   import PrimaryNav from "~/components/wallet/PrimaryNav.vue";
+  import Feedback from "~/components/Feedback.vue";
   import NotificationQueue from "~/components/wallet/NotificationQueue.vue";
   import mitt from 'mitt';
 
@@ -31,6 +35,8 @@
   const { user, isAuthorized } = storeToRefs(userStore)
 
   const emitter = mitt()
+
+  const modal = ref('')
 
   provide('emitter', emitter);
 
@@ -47,6 +53,9 @@
     return res;
   })
 
+  emitter.on('tdv-feedback-show', () => {
+    modal.value = 'feedback';
+  })
 </script>
 
 <style lang="stylus">

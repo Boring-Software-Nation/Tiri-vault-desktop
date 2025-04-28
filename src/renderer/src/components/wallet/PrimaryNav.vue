@@ -139,29 +139,20 @@
 
     </div>
     <div class="lower">
-      <a class="menu-item" @click="emitter.emit('vf-modal-show', {type:'feedback'})">
+      <a class="menu-item feedback" @click="emitter.emit('tdv-feedback-show', {type:'feedback'})">
         <menu-item :is-active="false">
           <div class="svg-c">
-            <svg
-                 xmlns="http://www.w3.org/2000/svg"  x="0px" y="0px" viewBox="0 0 24 25"
-                  class="with-stroke" xml:space="preserve">
-
-              <mask id="mask0_35_368" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-                <rect width="24" height="24"/>
-              </mask>
-              <g mask="url(#mask0_35_368)">
-
-              <path stroke-width="2" d="M20.9,13h-2c-1.1,0-2,0.9-2,2v2c0,1.1,0.9,2,2,2l0,0c1.1,0,2-0.9,2-2V13c0-5-4-9-8.9-9C7,4,3,8,3,13v4
-			c0,1.1,0.9,2,2,2l0,0c1.1,0,2-0.9,2-2v-2c0-1.1-0.9-2-2-2H3"/>
-              <path stroke-width="2" d="M20.9,15v4c0,0,0,3-2,3s-5,0-5,0"/>
-              </g>
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
+              <path d="M21.5956 13H19.6216C18.517 13 17.6216 13.8954 17.6216 15V17.013C17.6216 18.1104 18.5112 19 19.6086 19V19C20.706 19 21.5956 18.1104 21.5956 17.013V13C21.5956 8.02944 17.5923 4 12.654 4C7.71569 4 3.7124 8.02944 3.7124 13V17.013C3.7124 18.1104 4.60202 19 5.69942 19V19C6.79683 19 7.68645 18.1104 7.68645 17.013V15C7.68645 13.8954 6.79102 13 5.68645 13H3.7124" stroke="#49454F" stroke-width="2"/>
             </svg>
-
+            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="8" viewBox="0 0 9 8" fill="none" class="secondary">
+              <path d="M7.59569 0V4C7.59569 4 7.59569 7 5.60867 7C3.62165 7 0.641113 7 0.641113 7" stroke="#49454F" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
           </div>
-          <div class="caption"></div>
+          <div class="caption">Support</div>
         </menu-item>
       </a>
-      <a class="menu-item" @click.prevent="logout">
+      <a class="menu-item logout" @click.prevent="logout">
         <menu-item :is-active="false">
           <div class="svg-c">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -364,6 +355,23 @@ a.menu-item {
 
   &:last-child {
     margin-bottom: 0;
+  }
+
+  &.feedback {
+    svg {
+      fill: transparent;
+    }  
+    svg.secondary {
+      position: absolute;
+      bottom: 0;
+      right: 1px;
+    }
+  }
+
+  &.logout {
+    svg {
+      fill: #8AA8AC;
+    }  
   }
 }
 </style>
