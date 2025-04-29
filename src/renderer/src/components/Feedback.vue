@@ -12,7 +12,7 @@
         <path d="M33 33.5371V61.4847" stroke="#D06B57" stroke-width="3" stroke-linejoin="round"/>
       </svg>
       <div class="title">Need help?</div>
-      <a class="content" :href="`mailto:tiri.support@bsn.si?subject=${subject}`">For support, please contact us at <span class="mailto-address">tiri.support@bsn.si</span>. Make sure to include your wallet address in the email subject field for identification.</a>
+      <a class="content" :href="`mailto:tiri.support@bsn.si?subject=${subject}&body=${message}`">For support, please contact us at <span class="mailto-address">tiri.support@bsn.si</span>. Make sure to include your wallet address in the email subject field for identification.</a>
     </div>
   </div>
 </template>
@@ -34,7 +34,11 @@ const { currentWallet } = storeToRefs(walletStore);
 const addresses = ref([]);
 
 const subject = computed(() => {
-  return encodeURIComponent(`ticket from user ID ${currentWallet.value.id} wallet address ${currentAddress.value}`);
+  return encodeURIComponent(`ticket from user ID ${currentWallet.value.id}`);
+});
+
+const message = computed(() => {
+  return encodeURIComponent(`My ID: ${currentWallet.value.id}\nMy wallet: ${currentAddress.value}.\nMy request: \n`);
 });
 
 const loadWalletAddresses = (page) => {
