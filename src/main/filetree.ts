@@ -32,7 +32,7 @@ function filetree(rootPath: string) {
         mtime: stats.mtimeMs,
         children: await Promise.all(
           children.filter(
-            (child) => !(child.startsWith('tdvdl-') && child.endsWith('.tmp')) // filter out download temp files
+            (child) => !(child.startsWith('~') || child.toLowerCase().endsWith('.tmp')) // filter out temp files
           ).map(
             async (child) => buildNode(path.join(nodePath, child))
           )

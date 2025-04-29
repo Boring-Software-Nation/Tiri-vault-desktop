@@ -20,7 +20,7 @@ export function startFileWatcher(directory: string) {
   watcher = chokidar.watch(directory, {
     ignored: (filepath, stats) => {
       const name = path.basename(filepath);
-      return (stats||false) && stats.isFile() && name.endsWith('.tmp');
+      return (stats||false) && stats.isFile() && (name.endsWith('.tmp') || name.startsWith('~'));
     },
     ignoreInitial: true,
     persistent: true
