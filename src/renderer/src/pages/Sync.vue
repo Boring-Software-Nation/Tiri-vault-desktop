@@ -604,6 +604,7 @@ const onDownloadFinished = async () => {
   }
 
   ipcSend('directorySynced', currentWallet.value.id);
+  state.directorySynced = true;
 
   state.messages.push('Synced');
   running.value = false;
