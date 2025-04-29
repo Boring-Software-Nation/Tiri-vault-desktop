@@ -194,10 +194,10 @@ enum StopReason {
 
 let stopWaiter:any;
 const stopSync = async (reason:StopReason) => {
-  stopping.value = true;
   state.messages.push(reason);
   const stopPromise = new Promise((resolve, reject) => {
     stopWaiter = {resolve, reject};
+    stopping.value = true;
   });
   return stopPromise;
 };
@@ -313,7 +313,6 @@ ipcOn('replaceMessage', (event, message, oldMessage) => {
 ipcOn('filetree', async (event, filetree) => {
   if (running.value) {
     await stopSync(StopReason.LOCAL);
-    state.messages.push('Restarting sync due to local files changed...');
   }
   if (!syncActive.value) {
     return;
