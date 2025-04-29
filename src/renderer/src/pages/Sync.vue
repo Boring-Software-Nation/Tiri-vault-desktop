@@ -80,30 +80,6 @@ onUnmounted(async () => {
   //console.log('!!! onUnmounted done !!!', ipcCleanups, messageHandlers);
 });
 
-let loggedIn = false;
-
-watchEffect(async () => {
-  console.log('Current wallet:', currentWallet.value);
-  if (!currentWallet.value)
-    return;
-
-  if (user.value?.token && loggedIn)
-     return;
-
-  if (user?.value?.token) {
-    if (activeSubscription.value.plan_code) {
-      loggedIn = true;
-      syncActive.value = true;
-      console.log('>>> starting')
-      startWebsocketClient();
-      ipcSend('getDirectory', currentWallet.value.id);
-    }
-  } else {
-    await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
-  }
-
-});
-
 
 let socket: Socket|null = null;
 let socketTimeout = 1000;
@@ -183,6 +159,32 @@ const stopWebsocketClient = () => {
     socket.close();
   }
 };
+
+
+let loggedIn = false;
+
+watchEffect(async () => {
+  console.log('Current wallet:', currentWallet.value);
+  if (!currentWallet.value)
+    return;
+
+  if (user.value?.token && loggedIn)
+     return;
+
+  if (user?.value?.token) {
+    if (activeSubscription.value.plan_code) {
+      loggedIn = true;
+      syncActive.value = true;
+      console.log('>>> starting')
+      startWebsocketClient();
+      ipcSend('getDirectory', currentWallet.value.id);
+    }
+  } else {
+    await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
+  }
+
+});
+
 
 enum StopReason {
   LOCAL = 'Stopping sync for restart due to local files changed...',
