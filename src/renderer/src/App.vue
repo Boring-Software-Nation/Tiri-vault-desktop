@@ -2,8 +2,9 @@
   <primary-nav />
   <div class="page-wrapper">
     <unavailable-page v-if="typeof unavailable === 'string'" />
+    <sync v-if="setup && unlocked" v-show="routeName === 'sync'" />
     <router-view v-if="setup && unlocked" v-slot="{ Component }">
-      <keep-alive include="Sync">
+      <keep-alive>
         <component :is="Component" />
       </keep-alive>
     </router-view>
@@ -19,7 +20,9 @@
 <script setup lang="ts">
   import {useUserStore, userStorage} from "~/store/user";
   import {routerPush} from "./router";
+  import {useRoute} from "vue-router";
   import {useWalletsStore} from "./store/wallet";
+  import Sync from './pages/Sync.vue'
   import UnlockWallet from "./pages/UnlockWallet.vue";
   import SetupPage from "./pages/SetupPage.vue";
   import UnavailablePage from "./pages/UnavailablePage.vue";
@@ -56,6 +59,9 @@
   emitter.on('tdv-feedback-show', () => {
     modal.value = 'feedback';
   })
+
+  const route = useRoute()
+  const routeName = computed(() => route.name)
 </script>
 
 <style lang="stylus">
