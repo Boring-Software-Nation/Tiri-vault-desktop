@@ -14,6 +14,8 @@ import { onMessage as _onMessage, offMessage, sendMessage } from '~/hat-sh/';
 import { Buffer } from 'buffer';
 import { io, Socket } from 'socket.io-client';
 import WalletDisplay from "~/components/wallet/WalletDisplay.vue";
+import {hash} from 'tweetnacl';
+import {encode as encodeUTF8} from '@stablelib/utf8';
 
 const state = reactive({
   directory: '',
@@ -35,6 +37,8 @@ const syncActive = ref(false);
 const running = ref(false);
 const stopping = ref(false);
 const stoppedByLimits = ref(false);
+
+const cryptPassword = ref(null as Uint8Array|null);
 
 type QuueItem = {
   id: number,
@@ -173,6 +177,7 @@ watchEffect(async () => {
 
   if (user?.value?.token) {
     if (activeSubscription.value.plan_code) {
+      cryptPassword.value = hash(encodeUTF8(currentWallet.value.seed));
       loggedIn = true;
       syncActive.value = true;
       console.log('>>> starting')
@@ -357,7 +362,7 @@ const fetchRemoteTree = async () => {
     console.error('No remote tree:', e);
   }
   if (encodedTree) {
-    sendMessage('hat-sh', [ "decryptBuffer", encodedTree, JSON.stringify(user.value?.unlockPassword) ], 'background');
+    sendMessage('hat-sh', [ "decryptBuffer", encodedTree, JSON.stringify(cryptPassword.value) ], 'background');
   } else {
     processTrees();
   }
@@ -617,7 +622,7 @@ const storeTreeModel = async () => {
 const encryptTreeModel = async () => {
   const tree = diffs.merged?.model||{};
   const treeString = JSON.stringify(tree);
-  sendMessage('hat-sh', [ "encryptBuffer", treeString, JSON.stringify(user.value?.unlockPassword) ], 'background');
+  sendMessage('hat-sh', [ "encryptBuffer", treeString, JSON.stringify(cryptPassword.value) ], 'background');
 };
 
 const onTreeModelEncrypted = async (encryptedData) => {
@@ -920,7 +925,7 @@ const kickOffEncryption = async () => {
     */
 
     //if (encryptionMethodState === "secretKey") {
-    await sendMessage('hat-sh', [ "requestEncryption", JSON.stringify(user.value?.unlockPassword) ], 'background');
+    await sendMessage('hat-sh', [ "requestEncryption", JSON.stringify(cryptPassword.value) ], 'background');
     //}
   } else {
     // console.log("out of files")
@@ -982,7 +987,7 @@ const downloadItem = async () => {
       decWaiter = {resolve, reject};
     });
     await sendMessage('hat-sh', [ "decryptFileChunk",
-      JSON.stringify(user.value?.unlockPassword),
+      JSON.stringify(cryptPassword.value),
       encodeArrayBufferToUrlSafeBase64(signature),
       encodeArrayBufferToUrlSafeBase64(salt),
       encodeArrayBufferToUrlSafeBase64(header),
