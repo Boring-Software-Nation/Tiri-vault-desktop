@@ -29,7 +29,7 @@
                 <div class="wallet-plan-left">
                   <span class="wallet-plan-caption">Plan: </span><span class="wallet-plan-name">{{ subscriptionNameByCode }}</span>&nbsp;<span class="wallet-plat-vol">({{ subscriptionVolByCode }})</span>
                 </div>
-                <div class="wallet-plan-right">
+                <div class="wallet-plan-right" v-if="!activeSubscription.plan_code.startsWith('TRIAL')">
                   <div>
                     <span v-if="nextPaymentDate" class="wallet-plan-caption"> Expires: </span><span class="wallet-plan-name">{{ nextPaymentDate}}</span>
                   </div>
