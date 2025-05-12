@@ -10,9 +10,9 @@
             v-if="currentWallet"
             :wallet="currentWallet"
             :wallets="allWallets"
-            :active="selectedWallet && selectedWallet.id === currentWallet.id"
+            :active="true"
             :key="currentWallet.id"
-            mode="subscription"
+            mode="wallet"
             @selected="onWalletSelected"/>
       </transition>
     </div>
@@ -32,7 +32,7 @@ const { updateUser, userLogout } = userStore;
 const {allWallets, pushNotification, getSelectedWallet, lockWallets} = store;
 const { currentWallet, getCurrentWalletId } = storeToRefs(useWalletsStore())
 const {user} = storeToRefs(userStore)
-const selectedWallet = ref(null as any)
+const selectedWallet = ref(null)
 
 onMounted(() => {
   selectedWallet.value = getSelectedWallet.value || null;
@@ -94,6 +94,10 @@ const logout = async () => {
   @media screen and (min-width: 767px) {
     grid-template-columns: auto minmax(0, 1fr);
   }
+}
+
+.wallet-display {
+  grid-gap: 0;
 }
 
 .wallets-detail {

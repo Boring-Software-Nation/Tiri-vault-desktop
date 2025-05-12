@@ -219,7 +219,8 @@ const doStreamFetch = async (url, token, fileId, client) => {
       duplex: 'half',
       body: stream,
       headers: {
-        'Authorization': `Basic ${token}`
+        'Authorization': `Basic ${token}`,
+        'Content-Type': 'application/octet-stream',
       },
     })
     console.log('doStreamFetch response', r)
@@ -703,6 +704,7 @@ const decryptFileChunk = async (password, signature, salt, header, decFileBuff, 
     state,
     decFileBuff
   );
+  //console.log('!!! decrypted', decrypted)
 
   client.postMessage({ id: 'hat-sh-file', action: "chunkDecrypted", data: encodeArrayBufferToUrlSafeBase64(decrypted.message) });
 }

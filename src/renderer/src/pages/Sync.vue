@@ -13,6 +13,9 @@ import { api } from "@renderer/services";
 import { onMessage as _onMessage, offMessage, sendMessage } from '~/hat-sh/';
 import { Buffer } from 'buffer';
 import { io, Socket } from 'socket.io-client';
+import WalletDisplay from "~/components/wallet/WalletDisplay.vue";
+import {hash} from 'tweetnacl';
+import {encode as encodeUTF8} from '@stablelib/utf8';
 
 const state = reactive({
   directory: '',
@@ -21,10 +24,11 @@ const state = reactive({
 });
 
 const walletStore = useWalletsStore();
+const { allWallets } = walletStore;
 const { currentWallet, getCurrentWalletId } = storeToRefs(walletStore);
 const userStore = useUserStore();
-const { loadUsage, loadSubscriptions } = userStore;
-const { user, activeSubscription } = storeToRefs(userStore);
+const { loadUsage, loadSubscriptions, userLogout } = userStore;
+const { user, userUsage, activeSubscription } = storeToRefs(userStore);
 
 const localTree = shallowRef<FileTreeModel>(null);
 const remoteTree = shallowRef<FileTreeModel>(null);
@@ -32,6 +36,9 @@ const remoteTree = shallowRef<FileTreeModel>(null);
 const syncActive = ref(false);
 const running = ref(false);
 const stopping = ref(false);
+const stoppedByLimits = ref(false);
+
+const cryptPassword = ref(null as Uint8Array|null);
 
 type QuueItem = {
   id: number,
@@ -75,30 +82,6 @@ onUnmounted(async () => {
   ipcCleanups.splice(0, ipcCleanups.length);
   clearMessageHandlers();
   //console.log('!!! onUnmounted done !!!', ipcCleanups, messageHandlers);
-});
-
-let loggedIn = false;
-
-watchEffect(async () => {
-  console.log('Current wallet:', currentWallet.value);
-  if (!currentWallet.value)
-    return;
-
-  if (user.value?.token && loggedIn)
-     return;
-
-  if (user?.value?.token) {
-    if (activeSubscription.value.plan_code) {
-      loggedIn = true;
-      syncActive.value = true;
-      console.log('>>> starting')
-      startWebsocketClient();
-      ipcSend('getDirectory', currentWallet.value.id);
-    }
-  } else {
-    await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
-  }
-
 });
 
 
@@ -181,6 +164,33 @@ const stopWebsocketClient = () => {
   }
 };
 
+
+let loggedIn = false;
+
+watchEffect(async () => {
+  console.log('Current wallet:', currentWallet.value);
+  if (!currentWallet.value)
+    return;
+
+  if (user.value?.token && loggedIn)
+     return;
+
+  if (user?.value?.token) {
+    if (activeSubscription.value.plan_code) {
+      cryptPassword.value = hash(encodeUTF8(currentWallet.value.seed));
+      loggedIn = true;
+      syncActive.value = true;
+      console.log('>>> starting')
+      startWebsocketClient();
+      ipcSend('getDirectory', currentWallet.value.id);
+    }
+  } else {
+    await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
+  }
+
+});
+
+
 enum StopReason {
   LOCAL = 'Stopping sync for restart due to local files changed...',
   REMOTE = 'Stopping sync for restart due to remote files changed...',
@@ -189,10 +199,10 @@ enum StopReason {
 
 let stopWaiter:any;
 const stopSync = async (reason:StopReason) => {
-  stopping.value = true;
   state.messages.push(reason);
   const stopPromise = new Promise((resolve, reject) => {
     stopWaiter = {resolve, reject};
+    stopping.value = true;
   });
   return stopPromise;
 };
@@ -221,12 +231,27 @@ const toggleSync = async () => {
   } else {
     if (user.value?.token && activeSubscription.value.plan_code) {
       syncActive.value = true;
+      stoppedByLimits.value = false;
+      state.messages = [];
       startWebsocketClient();
       ipcSend('getFileTree');
     }
   }
 }
 
+const inactivateSync = () => {
+  state.messages.push('Synchronization error, stopped.');
+  running.value = false;
+  syncActive.value = false;
+  stopWebsocketClient();
+}
+
+watch(activeSubscription, async (value, oldValue) => {
+  if (!syncActive.value && stoppedByLimits.value && value && value.plan_code && value.plan_code !== oldValue?.plan_code) {
+    await loadUsage(getCurrentWalletId.value);
+    toggleSync();
+  }
+});
 
 const chooseDirectory = () => ipcSend('chooseDirectory')
 const openDirectory = () => ipcSend('openDirectory')
@@ -234,10 +259,23 @@ const openDirectory = () => ipcSend('openDirectory')
 ipcOn('directorySelected', async (event, path, synced) => {
   state.directory = path;
   state.directorySynced = synced;
+  state.messages = [];
+  if (!syncActive.value && stoppedByLimits.value) {
+    await loadUsage(getCurrentWalletId.value);
+    toggleSync();
+  }
 })
 
 //ipcSend('getDirectory');
 
+ipcOn('quit', async (event) => {
+  console.log('Quit event received');
+  if (running.value) {
+    await stopSync(StopReason.OTHER);
+  }
+  await userLogout();
+  ipcSend('quit');
+});
 
 const chunkWaiters = new Map();
 
@@ -280,7 +318,9 @@ ipcOn('replaceMessage', (event, message, oldMessage) => {
 ipcOn('filetree', async (event, filetree) => {
   if (running.value) {
     await stopSync(StopReason.LOCAL);
-    state.messages.push('Restarting sync due to local files changed...');
+  }
+  if (!syncActive.value) {
+    return;
   }
   running.value = true;
 
@@ -322,7 +362,7 @@ const fetchRemoteTree = async () => {
     console.error('No remote tree:', e);
   }
   if (encodedTree) {
-    sendMessage('hat-sh', [ "decryptBuffer", encodedTree, JSON.stringify(user.value?.unlockPassword) ], 'background');
+    sendMessage('hat-sh', [ "decryptBuffer", encodedTree, JSON.stringify(cryptPassword.value) ], 'background');
   } else {
     processTrees();
   }
@@ -360,16 +400,19 @@ const processTrees = async () => {
   state.messages.push('Syncing...');
   if (diffs.remove.length > 0) {
     await removeRemoteFiles(diffs.remove);
+    await loadUsage(getCurrentWalletId.value);
+  }
+
+  if (!running.value) {
+    return;
   }
 
   try {
     await uploadFiles(diffs.upload);
+    await loadUsage(getCurrentWalletId.value);
   } catch(error) {
     console.error('Error:', error);
-    state.messages.push('Synchonization error, stopped.');
-    running.value = false;
-    syncActive.value = false;
-    stopWebsocketClient();
+    inactivateSync();
   }
 }
 
@@ -392,20 +435,24 @@ const removeRemoteFiles = async(diff:FileTreeModel[]) => {
     await Promise.all(deletionPromises);
   } catch (error) {
     console.error('Error deleting remote files:', error);
+    inactivateSync();
   }
 }
 
 const uploadFiles = async (diff:FileTreeModel[]) => {
+  /*
   const r = await getObjects('/');
   if (r.files.length === 0) {
     await createFolder('', '');
   }
   await createFolder('/', '.sync');
+  */
 
   if (diff.length > 0)
     state.messages.push('Uploading files...');
 
   numberOfFiles = 0;
+  let totalFileSize = 0;
   queue.value = [];
   diff.forEach((item) => {
     item?.walk((node) => {
@@ -417,12 +464,13 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
 
       if (node.model.type === 'directory' && node.model.path) {
         console.log('Dir:', node.model);
-        createFolder('/.sync', node.model.path);
+        //createFolder('/.sync', node.model.path);
         state.messages.push(`Folder: ${node.model.path}`);
       } else if (node.model.type === 'file') {
         console.log('File:', node.model);
         state.messages.push(`Staging file for upload: ${node.model.path}`);
         numberOfFiles++;
+        totalFileSize += node.model.size;
         queue.value.push({id: queue.value.length+1, file: node.model});
       }
       return true;
@@ -435,6 +483,24 @@ const uploadFiles = async (diff:FileTreeModel[]) => {
   }
 
   if (numberOfFiles > 0) {
+    const planCode = activeSubscription.value.plan_code;
+    // console.log('planCode', planCode)
+    // console.log('totalFileSize', totalFileSize)
+    // console.log('TRIAL_PLAN_LIMIT', CONFIG.TRIAL_PLAN_LIMIT * 1024 * 1024)
+    // console.log('usage', userUsage.value, (userUsage.value as any)?.customer_usage.charges_usage[0].units)
+    if (!planCode || ((planCode.startsWith('TRIAL')
+            && totalFileSize + parseInt((userUsage.value as any)?.customer_usage.charges_usage[0].units) > CONFIG.TRIAL_PLAN_LIMIT * 1024 * 1024) ||
+        (planCode.startsWith('MEDIUM')
+            && totalFileSize + parseInt((userUsage.value as any)?.customer_usage.charges_usage[0].units) > CONFIG.MEDIUM_PLAN_LIMIT * 1024 * 1024) ||
+        (planCode.startsWith('LARGE')
+            && totalFileSize + parseInt((userUsage.value as any)?.customer_usage.charges_usage[0].units) > CONFIG.LARGE_PLAN_LIMIT * 1024 * 1024))
+    ) {
+      inactivateSync();
+      state.messages.push('Storage limit exceeded, please upgrade your plan.');
+      stoppedByLimits.value = true;
+      return;
+    }
+
     currFile.value = 0;
     prepareFile();
   } else {
@@ -542,6 +608,7 @@ const onDownloadFinished = async () => {
   }
 
   ipcSend('directorySynced', currentWallet.value.id);
+  state.directorySynced = true;
 
   state.messages.push('Synced');
   running.value = false;
@@ -555,7 +622,7 @@ const storeTreeModel = async () => {
 const encryptTreeModel = async () => {
   const tree = diffs.merged?.model||{};
   const treeString = JSON.stringify(tree);
-  sendMessage('hat-sh', [ "encryptBuffer", treeString, JSON.stringify(user.value?.unlockPassword) ], 'background');
+  sendMessage('hat-sh', [ "encryptBuffer", treeString, JSON.stringify(cryptPassword.value) ], 'background');
 };
 
 const onTreeModelEncrypted = async (encryptedData) => {
@@ -746,6 +813,7 @@ onMessage('hat-sh-response', async (message) => {
         const item = queue.value[queueIdx];
         console.log('Error uploading file:', item.file.path, params[1]);
         state.messages.push(`Error uploading file: ${item.file.path}: ${params[1]}`);
+        inactivateSync();
         /*const currentDir = getCurrentDir(props.currentWalletId, props.current.dirname);
 
         emitter.emit('vf-fetch', {
@@ -857,7 +925,7 @@ const kickOffEncryption = async () => {
     */
 
     //if (encryptionMethodState === "secretKey") {
-    await sendMessage('hat-sh', [ "requestEncryption", JSON.stringify(user.value?.unlockPassword) ], 'background');
+    await sendMessage('hat-sh', [ "requestEncryption", JSON.stringify(cryptPassword.value) ], 'background');
     //}
   } else {
     // console.log("out of files")
@@ -899,6 +967,7 @@ const downloadItem = async () => {
   }
 
   state.messages.push(`Downloading file: ${item.model.path}`);
+  console.log('Downloading:', item.model.path);
   const data = await downloadObject(item.model.path);
   console.log('Fetched data:', data);
 
@@ -918,7 +987,7 @@ const downloadItem = async () => {
       decWaiter = {resolve, reject};
     });
     await sendMessage('hat-sh', [ "decryptFileChunk",
-      JSON.stringify(user.value?.unlockPassword),
+      JSON.stringify(cryptPassword.value),
       encodeArrayBufferToUrlSafeBase64(signature),
       encodeArrayBufferToUrlSafeBase64(salt),
       encodeArrayBufferToUrlSafeBase64(header),
@@ -1026,6 +1095,18 @@ ipcOn('fileRenamed', (event, err) => {
 
 <template>
   <div class="sync-page">
+      <div class="wallets-detail">
+        <transition name="fade-top" mode="out-in">
+          <wallet-display
+              v-if="currentWallet"
+              :wallet="currentWallet"
+              :wallets="allWallets"
+              :active="true"
+              :key="currentWallet.id"
+              mode="info-only"/>
+        </transition>
+      </div>
+
     <div class="directory" v-if="state.directory"><a href="#" @click="openDirectory">{{ state.directory }}</a></div>
     <div class="directory" v-else>Directory not selected</div>
     <div class="actions">
@@ -1039,6 +1120,10 @@ ipcOn('fileRenamed', (event, err) => {
     </div>
     <div v-if="!activeSubscription.plan_code" class="warning">
       <p>You need to have an active subscription to use this feature.</p>
+      <p>Go to <router-link :to="{ name: 'wallets' }">Account</router-link> to subscribe.</p>
+    </div>
+    <div v-if="stoppedByLimits" class="warning">
+      <p>Storage limit exceeded, please upgrade your plan.</p>
       <p>Go to <router-link :to="{ name: 'wallets' }">Account</router-link> to subscribe.</p>
     </div>
     <div class="messages">
@@ -1055,10 +1140,14 @@ ipcOn('fileRenamed', (event, err) => {
 .sync-page {
   display: flex;
   flex-direction: column;
-  padding: 20px 10px 20px 20px;
+  padding: 15px 10px 20px 20px;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+}
+
+.wallets-detail {
+  margin-left: -10px;
 }
 
 .actions {
@@ -1115,6 +1204,7 @@ ipcOn('fileRenamed', (event, err) => {
 
 .directory {
   width: 100%;
+  height: 65px;
   padding: 10px 20px 14px 20px;
   border-radius: 30px;
   border: 5px solid #E3CCA9;

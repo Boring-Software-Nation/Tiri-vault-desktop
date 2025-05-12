@@ -232,7 +232,7 @@ const step = ref('password'), createType = ref('create'),
     walletName = ref(''),
     recoverySeed = ref(''),
     currencyType = ref('sc'),
-    seedType = ref('sia'),
+    seedType = ref('walrus'),
     serverType = ref('siacentral'), creating = ref(false), saving = ref(false), exported = ref(false);
 
 let wallet = reactive({

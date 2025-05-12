@@ -60,7 +60,7 @@ export default {
   const props = defineProps<{
     wallet: Wallet,
     transaction: any,
-    subscription: String
+    subscription?: String
   }>();
 
 
@@ -218,12 +218,14 @@ export default {
 
       await scanTransactions(props.wallet);
 
-      await finalizeSubscribeUser(props.wallet.id, props.subscription, props.transaction)
+      if (typeof props.subscription === 'string' && props.subscription.length > 0) {
+        await finalizeSubscribeUser(props.wallet.id, props.subscription, props.transaction)
 
-      setTimeout(()=> {
-        loadUsage(props.wallet.id)
-        loadSubscriptions(props.wallet.id)
-      }, 3000)
+        setTimeout(()=> {
+          loadUsage(props.wallet.id)
+          loadSubscriptions(props.wallet.id)
+        }, 3000)
+      }
 
       emit('done');
     } catch (ex: any) {
@@ -234,7 +236,8 @@ export default {
         message: ex.message
       });
 
-      await cancelSubscribeUser(props.wallet.id, props.subscription, props.transaction.subscription_address, props.transaction.subscription_price)
+      if (typeof props.subscription === 'string' && props.subscription.length > 0)
+        await cancelSubscribeUser(props.wallet.id, props.subscription, props.transaction.subscription_address, props.transaction.subscription_price)
     } finally {
       sending.value = false;
     }
