@@ -226,7 +226,7 @@ export default {
 
 import BigNumber from 'bignumber.js';
 import {formatPriceString, formatSiafundString, formatExchangeRate} from '~/utils/format';
-import {computed, onBeforeMount, onMounted, ref} from "vue";
+import {computed, onBeforeMount, onMounted, ref, watchEffect} from "vue";
 import Wallet from "~/types/wallet";
 import {useWalletsStore} from "~/store/wallet";
 import {getLastWalletAddresses} from '~/store/db';
@@ -251,7 +251,7 @@ const modal = ref(''), selectedTransaction = ref(null), showMore = ref(false), s
     addresses = ref([]), current = ref(0);
 
 const userStore = useUserStore();
-const {userSubscriptions, activeSubscription, trialUsed} = storeToRefs(userStore)
+const {user, userSubscriptions, activeSubscription, trialUsed} = storeToRefs(userStore)
 const {loadSubscriptions, loadUsage} = userStore;
 
 const {toClipboard} = useClipboard()
@@ -275,13 +275,23 @@ onBeforeMount(async () => {
   addresses.value = loadedAddresses;
 })
 
+let loggedIn = false;
+watchEffect(() => {
+  if (!loggedIn && user.value && user.value.token) {
+    loggedIn = true;
+    loadUsage(props.wallet.id);
+    loadSubscriptions(props.wallet.id);
+  }
+})
+
+/*
 onMounted(async () => {
   loadUsage(props.wallet.id);
   loadSubscriptions(props.wallet.id)
 
   console.log('Current address', currentAddress)
 
-  /*
+  / *
   const lastVersion = await loadLastVersion();
   const currentVersion = chrome.runtime.getManifest().version;
   console.log('Last version', lastVersion.last_version, 'Current version', currentVersion)
@@ -294,8 +304,9 @@ onMounted(async () => {
     });
 
   }
-  */
+  * /
 })
+*/
 
 const loadLastVersion = async () => {
   const {data} = await api.service.last_version()

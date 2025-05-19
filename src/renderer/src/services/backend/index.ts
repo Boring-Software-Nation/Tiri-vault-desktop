@@ -62,6 +62,7 @@ async function registerUser(walletId, password) {
         const result = await api.service.register({user: {wallet: walletId, password: JSON.stringify(password)}})
         const {token} = (result.data as any).user
         updateUser({unlockPassword: createUint8ArrayFromKeys(password), token: token as string})
+        console.log('%cLogin (register) to backend successful', 'background: #222; color: #bada55')
     } catch (e) {
         if (isFetchError(e)) {
             const status = (e as Response).status

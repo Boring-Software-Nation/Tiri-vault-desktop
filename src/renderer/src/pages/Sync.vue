@@ -64,10 +64,12 @@ const clearMessageHandlers = () => {
   messageHandlers.splice(0, messageHandlers.length);
 }
 
+/*
 onMounted(() => {
   loadUsage(getCurrentWalletId.value)
   loadSubscriptions(getCurrentWalletId.value)
 });
+*/
 
 onUnmounted(async () => {
   //console.log('!!! onUnmounted !!!');
@@ -182,7 +184,12 @@ watchEffect(async () => {
       syncActive.value = true;
       console.log('>>> starting')
       startWebsocketClient();
-      ipcSend('getDirectory', currentWallet.value.id);
+      await loadUsage(getCurrentWalletId.value);
+      await loadSubscriptions(getCurrentWalletId.value);
+      if (state.directory)
+        ipcSend('getFileTree');
+      else
+        ipcSend('getDirectory', currentWallet.value.id);
     }
   } else {
     await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
@@ -192,9 +199,9 @@ watchEffect(async () => {
 
 
 enum StopReason {
-  LOCAL = 'Stopping sync for restart due to local files changed...',
-  REMOTE = 'Stopping sync for restart due to remote files changed...',
-  OTHER = 'Stopping sync...',
+  LOCAL = 'Restarting sync for updates (local files changed)',
+  REMOTE = 'Restarting sync for updates (remote files changed)',
+  OTHER = 'Stopping sync',
 }
 
 let stopWaiter:any;
@@ -217,7 +224,7 @@ watch(running, async (value) => {
 
 const restartSync = () => {
   //state.messages = [];
-  state.messages.push('Restarting sync due to remote files changed...');
+  state.messages.push(StopReason.REMOTE);
   ipcSend('getFileTree');
 };
 
