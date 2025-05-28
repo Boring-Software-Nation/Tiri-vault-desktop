@@ -64,18 +64,13 @@ const clearMessageHandlers = () => {
   messageHandlers.splice(0, messageHandlers.length);
 }
 
-/*
-onMounted(() => {
-  loadUsage(getCurrentWalletId.value)
-  loadSubscriptions(getCurrentWalletId.value)
-});
-*/
 
 onUnmounted(async () => {
   //console.log('!!! onUnmounted !!!');
   if (running.value) {
     await stopSync(StopReason.OTHER);
   }
+  syncActive.value = false;
   stopWebsocketClient();
   state.messages = [];
   state.directory = '';
@@ -170,7 +165,9 @@ const stopWebsocketClient = () => {
 let loggedIn = false;
 
 watchEffect(async () => {
-  console.log('Current wallet:', currentWallet.value);
+  //console.log('Current wallet:', currentWallet.value);
+  //console.log('!!!!!', loggedIn, syncActive.value, user.value?.token!=='', activeSubscription.value.external_customer_id, currentWallet.value?.id.replace(/\//g, '$'), activeSubscription.value.external_customer_id == currentWallet.value?.id.replace(/\//g, '$'));
+
   if (!currentWallet.value)
     return;
 
@@ -178,7 +175,7 @@ watchEffect(async () => {
      return;
 
   if (user?.value?.token) {
-    if (activeSubscription.value.plan_code) {
+    if (activeSubscription.value.plan_code && activeSubscription.value.external_customer_id === currentWallet.value?.id.replace(/\//g, '$')) {
       cryptPassword.value = hash(encodeUTF8(currentWallet.value.seed));
       loggedIn = true;
       syncActive.value = true;
@@ -329,13 +326,13 @@ ipcOn('filetree', async (event, filetree) => {
   if (!syncActive.value) {
     return;
   }
-  running.value = true;
 
   //console.log('Filetree:', filetree);
   localTree.value = parseFileTreeModel(filetree);
   console.log('Local tree:', localTree.value?.model);
   //state.messages.push(`Filetree: ${JSON.stringify(filetree)}`);
   if (user.value?.token && activeSubscription.value.plan_code) {
+    running.value = true;
     fetchRemoteTree();
   }
 });
