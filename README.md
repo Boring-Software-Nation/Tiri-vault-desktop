@@ -38,10 +38,9 @@ This ensures that all user devices remain in sync, providing a seamless and dece
 
 # Tiri Vault Desktop
 
-This is repository contains a desktop Electron application with Vue and TypeScript.  
+This repository contains a desktop Electron application with Vue and TypeScript.  
 Related repos:  
-[Tiri Relay](https://github.com/Boring-Software-Nation/Tiri-relay)  
-[Tiri Vault browser extension](https://github.com/Boring-Software-Nation/Tiri-vault-extension) *currently not supported
+[Tiri Relay](https://github.com/Boring-Software-Nation/Tiri-relay)
 
 ## Recommended IDE Setup
 
