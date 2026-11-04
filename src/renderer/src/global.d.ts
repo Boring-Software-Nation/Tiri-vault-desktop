@@ -12,6 +12,7 @@ interface ImportMeta {
     BASE_URL: string
     VITE_API_HOST: string,
     VITE_WS_URL: string,
+    VITE_SIASCAN_API_HOST: string,
     VITE_SIG_V2_SYMMETRIC: string,
     VITE_SIG_V2_ASYMMETRIC: string,
     VITE_TRIAL_VOL_LABEL: string,

@@ -64,16 +64,13 @@ const clearMessageHandlers = () => {
   messageHandlers.splice(0, messageHandlers.length);
 }
 
-onMounted(() => {
-  loadUsage(getCurrentWalletId.value)
-  loadSubscriptions(getCurrentWalletId.value)
-});
 
 onUnmounted(async () => {
   //console.log('!!! onUnmounted !!!');
   if (running.value) {
     await stopSync(StopReason.OTHER);
   }
+  syncActive.value = false;
   stopWebsocketClient();
   state.messages = [];
   state.directory = '';
@@ -168,7 +165,9 @@ const stopWebsocketClient = () => {
 let loggedIn = false;
 
 watchEffect(async () => {
-  console.log('Current wallet:', currentWallet.value);
+  //console.log('Current wallet:', currentWallet.value);
+  //console.log('!!!!!', loggedIn, syncActive.value, user.value?.token!=='', activeSubscription.value.external_customer_id, currentWallet.value?.id.replace(/\//g, '$'), activeSubscription.value.external_customer_id == currentWallet.value?.id.replace(/\//g, '$'));
+
   if (!currentWallet.value)
     return;
 
@@ -176,13 +175,18 @@ watchEffect(async () => {
      return;
 
   if (user?.value?.token) {
-    if (activeSubscription.value.plan_code) {
+    if (activeSubscription.value.plan_code && activeSubscription.value.external_customer_id === currentWallet.value?.id.replace(/\//g, '$')) {
       cryptPassword.value = hash(encodeUTF8(currentWallet.value.seed));
       loggedIn = true;
       syncActive.value = true;
       console.log('>>> starting')
       startWebsocketClient();
-      ipcSend('getDirectory', currentWallet.value.id);
+      await loadUsage(getCurrentWalletId.value);
+      await loadSubscriptions(getCurrentWalletId.value);
+      if (state.directory)
+        ipcSend('getFileTree');
+      else
+        ipcSend('getDirectory', currentWallet.value.id);
     }
   } else {
     await loginOrRegisterUser(getCurrentWalletId.value, user?.value?.unlockPassword);
@@ -192,9 +196,9 @@ watchEffect(async () => {
 
 
 enum StopReason {
-  LOCAL = 'Stopping sync for restart due to local files changed...',
-  REMOTE = 'Stopping sync for restart due to remote files changed...',
-  OTHER = 'Stopping sync...',
+  LOCAL = 'Restarting sync for updates (local files changed)',
+  REMOTE = 'Restarting sync for updates (remote files changed)',
+  OTHER = 'Stopping sync',
 }
 
 let stopWaiter:any;
@@ -217,7 +221,7 @@ watch(running, async (value) => {
 
 const restartSync = () => {
   //state.messages = [];
-  state.messages.push('Restarting sync due to remote files changed...');
+  state.messages.push(StopReason.REMOTE);
   ipcSend('getFileTree');
 };
 
@@ -322,13 +326,13 @@ ipcOn('filetree', async (event, filetree) => {
   if (!syncActive.value) {
     return;
   }
-  running.value = true;
 
   //console.log('Filetree:', filetree);
   localTree.value = parseFileTreeModel(filetree);
   console.log('Local tree:', localTree.value?.model);
   //state.messages.push(`Filetree: ${JSON.stringify(filetree)}`);
   if (user.value?.token && activeSubscription.value.plan_code) {
+    running.value = true;
     fetchRemoteTree();
   }
 });

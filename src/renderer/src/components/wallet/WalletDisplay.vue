@@ -226,7 +226,7 @@ export default {
 
 import BigNumber from 'bignumber.js';
 import {formatPriceString, formatSiafundString, formatExchangeRate} from '~/utils/format';
-import {computed, onBeforeMount, onMounted, ref} from "vue";
+import {computed, onBeforeMount, onMounted, ref, watchEffect} from "vue";
 import Wallet from "~/types/wallet";
 import {useWalletsStore} from "~/store/wallet";
 import {getLastWalletAddresses} from '~/store/db';
@@ -251,13 +251,46 @@ const modal = ref(''), selectedTransaction = ref(null), showMore = ref(false), s
     addresses = ref([]), current = ref(0);
 
 const userStore = useUserStore();
-const {userSubscriptions, activeSubscription, trialUsed} = storeToRefs(userStore)
+const {user, userSubscriptions, activeSubscription, trialUsed} = storeToRefs(userStore)
 const {loadSubscriptions, loadUsage} = userStore;
 
 const {toClipboard} = useClipboard()
 
 const walletsStore = useWalletsStore();
-const {exchangeRateSC, exchangeRateSF, settings, scanQueue, queueWallet, pushNotification} = walletsStore;
+const {settings, scanQueue, queueWallet, pushNotification} = walletsStore;
+
+const exchangeRateSC = ref<{[key: string]: number}>({}); 
+const getRate = async (currency: string) => {
+  try {
+    const res = await fetch(`${CONFIG.SIASCAN_API_HOST}/exchange-rate/siacoin/${currency}`);
+    if (!res.ok) {
+      throw new Error('Failed to fetch exchange rates');
+    }
+    const data = await res.text();
+    return Number(data);
+  } catch (error) {
+    console.error('Error fetching exchange rates:', error);
+    return NaN;
+  }
+}
+const loadRates = async () => {
+  const currencies = ['usd', 'eur'];
+  const rates: {[key: string]: number} = {};
+  for (const currency of currencies) {
+    const rate = await getRate(currency);
+    if (rate && !isNaN(rate)) {
+      rates[currency] = rate;
+    } else {
+      console.warn(`Failed to load exchange rate for ${currency}`);
+    }
+  }
+  if (Object.keys(rates).length > 0) {
+    exchangeRateSC.value = rates;
+  } else {
+    console.warn('No valid exchange rates loaded');
+  }
+}
+
 
 onBeforeMount(async () => {
   const loadedAddresses = await loadWalletAddresses(0);
@@ -273,15 +306,28 @@ onBeforeMount(async () => {
   });
 
   addresses.value = loadedAddresses;
+
+  await loadRates();
+  await loadBalance(currentAddress.value);
 })
 
+let loggedIn = false;
+watchEffect(() => {
+  if (!loggedIn && user.value && user.value.token) {
+    loggedIn = true;
+    loadUsage(props.wallet.id);
+    loadSubscriptions(props.wallet.id);
+  }
+})
+
+/*
 onMounted(async () => {
   loadUsage(props.wallet.id);
   loadSubscriptions(props.wallet.id)
 
   console.log('Current address', currentAddress)
 
-  /*
+  / *
   const lastVersion = await loadLastVersion();
   const currentVersion = chrome.runtime.getManifest().version;
   console.log('Last version', lastVersion.last_version, 'Current version', currentVersion)
@@ -294,8 +340,9 @@ onMounted(async () => {
     });
 
   }
-  */
+  * /
 })
+*/
 
 const loadLastVersion = async () => {
   const {data} = await api.service.last_version()
@@ -314,6 +361,7 @@ const walletQueued = computed(() => {
   return props.wallet.scanning === 'full' || scanQueue.filter(s => s.walletID === props.wallet.id && s.full).length !== 0;
 });
 
+/*
 const siacoinBalance = computed(() => {
   let value = new BigNumber(0);
 
@@ -331,6 +379,25 @@ const siafundBalance = computed(() => {
 
   return value;
 });
+*/
+
+const siacoinBalance = ref(new BigNumber(0));
+const siafundBalance = ref(new BigNumber(0));
+
+const loadBalance = async (address: string) => {
+  try {
+    const res = await fetch(`${CONFIG.SIASCAN_API_HOST}/wallet/addresses/${address}/balance`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch balance for address ${address}`);
+    }
+    const data = await res.json();
+    siacoinBalance.value = new BigNumber(data.siacoins || 0);
+    siafundBalance.value = new BigNumber(data.siafunds || 0);
+  } catch (error) {
+    console.error('Error fetching balance:', error);
+    return;
+  }
+}
 
 const claimBalance = computed(() => {
   if (!props.wallet)
@@ -385,13 +452,13 @@ const formatSiacoinString = (val) => {
 // }
 
 const formatCurrencyString = (val) => {
-  let exchangeRate = exchangeRateSC;
+  let exchangeRate = exchangeRateSC.value[settings?.currency||''];
 
   // if (props.wallet.currency && props.wallet.currency === 'scp')
   //   exchangeRate = exchangeRateSCP;
 
-  const format = formatPriceString(val, 2, settings?.currency, exchangeRate[settings?.currency||''], props.wallet.precision());
-  const exchangeRateStr = formatExchangeRate(exchangeRate[settings?.currency||''], settings?.currency, 'never').toUpperCase();
+  const format = formatPriceString(val, 2, settings?.currency, exchangeRate, props.wallet.precision());
+  const exchangeRateStr = formatExchangeRate(exchangeRate, settings?.currency, 'never').toUpperCase();
   return ` ( ${format.value} <span class="currency-display">${format.label} ${!exchangeRateStr.endsWith('NAN') ? '@' + exchangeRateStr : ''}</span> )`;
 }
 
