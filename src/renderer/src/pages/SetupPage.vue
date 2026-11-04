@@ -475,7 +475,7 @@ const description = computed(() => {
     case 'create-new':
       return 'Set a secure password. This password will be required to unlock, create, and recover your Tiri vault. All passwords are encrypted, stored locally and never leave your device.';
     case 'forgot-password':
-      return 'Please, enter your new password. On the next step you will need your wallet seed to restore access to your Tiri data wallet';
+      return 'Please, enter your new password. On the next step you will need your wallet seed to restore access to your Tiri Vault';
     default:
       return '';
   }
