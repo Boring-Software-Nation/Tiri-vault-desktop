@@ -78,7 +78,7 @@ $ npm install
 $ cp .env.example .env
 ```
 
-By default the app talks to a relay on `http://localhost:3003` (run [Tiri Relay](https://github.com/Boring-Software-Nation/Tiri-relay) locally) and to the Filecoin **Calibration testnet**. Free test tokens: [tFIL](https://faucet.calibnet.chainsafe-fil.io/funds.html), [tUSDFC](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc). A different relay or RPC address must also be added to the Content-Security-Policy in `src/renderer/index.html`.
+By default the app talks to a relay on `http://localhost:3003` (run [Tiri Relay](https://github.com/Boring-Software-Nation/Tiri-relay) locally) and to the Filecoin **Calibration testnet**. Free test tokens: [tFIL](https://faucet.calibnet.chainsafe-fil.io/funds.html), [tUSDFC](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc).
 
 ### Development
 
@@ -95,13 +95,8 @@ $ RELAY_URL=http://localhost:3003 npm test      # also signs in to a running rel
 
 ### Build
 
+Installers for testers and releases: see [BUILD.md](BUILD.md) (GitHub Actions or a Windows PC, relay address, versioning, code signing).
+
 ```bash
-# For windows
-$ npm run build:win
-
-# For macOS
-$ npm run build:mac
-
-# For Linux
-$ npm run build:linux
+$ npm run build:win     # Windows installer in release/<version>/
 ```

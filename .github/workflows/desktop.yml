@@ -1,0 +1,76 @@
+name: Desktop build
+
+# Pull requests and main: type-check, tests, and a Windows installer as a downloadable artifact.
+# Tags vX.Y.Z: the same, plus a draft GitHub Release with the installer attached.
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - run: npm run typecheck
+      - run: npm test
+
+  windows:
+    needs: check
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      # Set these in GitHub: Settings → Secrets and variables → Actions → Variables.
+      VITE_API_HOST: ${{ vars.VITE_API_HOST }}
+      VITE_WS_URL: ${{ vars.VITE_WS_URL }}
+      VITE_FILECOIN_NETWORK: ${{ vars.VITE_FILECOIN_NETWORK || 'calibration' }}
+      VITE_FILECOIN_RPC_URL: ${{ vars.VITE_FILECOIN_RPC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tag must match package.json version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME but package.json has $version" >&2; exit 1; }
+
+      - name: Relay address for this build
+        shell: bash
+        run: |
+          if [ -z "$VITE_API_HOST" ]; then
+            echo "::warning::VITE_API_HOST is not set: this installer can't reach a relay. Set the repository variables (see BUILD.md)."
+          else
+            echo "Relay: $VITE_API_HOST ($VITE_WS_URL), network: $VITE_FILECOIN_NETWORK"
+          fi
+
+      - run: npm ci
+      - run: npm run build:win
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TiriVault-windows-${{ github.sha }}
+          path: release/*/TiriVault-Setup-*.exe
+          if-no-files-found: error
+
+      - name: Draft GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: release/*/TiriVault-Setup-*.exe

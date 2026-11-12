@@ -1,44 +1,52 @@
-appId: com.electron.app
-productName: TiriVD
+# Installer settings (the only builder config; package.json has no "build" block).
+# appId identifies the app to Windows/macOS for updates and uninstall: don't change it after the first release.
+appId: com.tirivault.desktop
+productName: Tiri Vault
 directories:
   buildResources: build
+  output: release/${version}
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!tests/*'
+  - '!release/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!vitest.config.ts'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,BUILD.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+asar: true
 asarUnpack:
   - resources/**
+npmRebuild: false
+
 win:
-  executableName: TiriVD
+  executableName: TiriVault
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch: [x64]
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: TiriVault-Setup-${version}.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
   include: build/installer.nsh
+
 mac:
+  icon: build/icon.png
   entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  target: [dmg]
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: TiriVault-${version}.${ext}
+
 linux:
-  target:
-    - AppImage
-    - snap
-    - deb
-  maintainer: electronjs.org
+  target: [AppImage]
+  maintainer: Boring Software Nation
   category: Utility
 appImage:
-  artifactName: ${name}-${version}.${ext}
-npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  artifactName: TiriVault-${version}.${ext}
+
+# No auto-update server yet. Installers are attached to GitHub Releases by CI (see BUILD.md).
+publish: null

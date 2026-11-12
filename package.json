@@ -4,22 +4,6 @@
   "description": "Tiri Vault Desktop",
   "private": true,
   "main": "./out/main/index.js",
-  "build": {
-    "productName": "TiriVD",
-    "asar": true,
-    "win": {
-      "icon": "./build/icon.png",
-      "artifactName": "TiriVD Setup ${version}.${ext}",
-      "target": "nsis"
-    },
-    "nsis": {
-      "include": "./build/installer.nsh"
-    },
-    "mac": {
-      "icon": "./build/icon.png",
-      "artifactName": "TiriVD ${version}.${ext}"
-    }
-  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",
@@ -30,10 +14,10 @@
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux",
+    "build:unpack": "npm run build && electron-builder --publish never --dir",
+    "build:win": "npm run build && electron-builder --publish never --win",
+    "build:mac": "npm run build && electron-builder --publish never --mac",
+    "build:linux": "npm run build && electron-builder --publish never --linux",
     "test": "vitest run"
   },
   "dependencies": {
@@ -94,5 +78,10 @@
     "vue": "^3.4.30",
     "vue-router": "^4.4.5",
     "vue-tsc": "^2.0.22"
-  }
+  },
+  "productName": "Tiri Vault",
+  "author": {
+    "name": "Boring Software Nation"
+  },
+  "repository": "https://github.com/Boring-Software-Nation/Tiri-vault-desktop"
 }
