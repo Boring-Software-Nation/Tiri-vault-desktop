@@ -1,45 +1,21 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteParams, RouteRecordRaw } from 'vue-router'
-import Home from './pages/Home.vue'
-import Sync from './pages/Sync.vue'
-import Blank from './pages/Blank.vue'
-import { isAuthorized } from '~/store/user'
 
 export const routes: RouteRecordRaw[] = [
     {
-        name: 'sync',
-        path: '/sync',
-        component: Blank,
+        name: 'wallets',
+        path: '/',
+        component: () => import('./pages/Account.vue'),
     },
-    /*
-    {
-        name: 'files',
-        path: '/files',
-        component: Home,
-    },
-    */
     {
         name: 'wallet',
         path: '/wallet',
-        component: () => import('./pages/Wallet.vue'),
+        redirect: '/',
     },
     {
-        name: 'wallets',
-        path: '/',
-        component: () => import('./pages/Wallets.vue'),
-    },
-    /*
-    {
-        name: 'history',
-        path: '/history',
-        component: () => import('./pages/History.vue'),
-    },
-    */
-    {
-        name: 'login',
-        path: '/login',
-        component: () => import('./pages/Login.vue'),
-        beforeEnter: () => !isAuthorized(),
+        name: 'sync',
+        path: '/sync',
+        component: () => import('./pages/SyncSoon.vue'),
     },
 ];
 export const router = createRouter({
@@ -48,7 +24,6 @@ export const router = createRouter({
 })
 
 export type AppRouteNames =
-    | 'login'
     | 'home'
     | 'wallets'
     | 'wallet'

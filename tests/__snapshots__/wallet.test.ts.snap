@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`keys from a recovery phrase > matches the proof-of-concept derivation (master key and X25519 fingerprints) 1`] = `
+{
+  "master": "6afa63f97c2b3cae",
+  "x25519": "9f65afd257fa6c37",
+}
+`;

@@ -1,0 +1,169 @@
+// Shared look of the full-screen setup and unlock screens (same palette as the original setup page).
+@require "./vars";
+
+.setup-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: bg;
+  overflow-y: auto;
+}
+
+.setup-step {
+  display: grid;
+  min-height: 100%;
+  max-width: 640px;
+  margin: auto;
+  padding: 50px 24px;
+  grid-gap: 16px;
+  align-content: safe center;
+}
+
+.setup-screen h2 {
+  margin: 0;
+  text-align: center;
+  font-size: 15px;
+  color: #D06B57;
+  font-weight: 900;
+}
+
+.setup-screen p.description {
+  color: #000;
+  font-size: 14px;
+  line-height: 20px;
+  margin: 0;
+}
+
+.setup-screen .hint {
+  font-size: 13px;
+  line-height: 18px;
+  color: #3d3a36;
+}
+
+.setup-screen .error-text {
+  color: #b3412c;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.setup-screen .ok-text {
+  color: #2f7a52;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.setup-screen .buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.setup-screen .link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #568BA4;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.back-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+
+  svg {
+    fill: #568BA4;
+    stroke: #D06B57;
+    stroke-width: 2px;
+    stroke-linejoin: round;
+  }
+
+  &:hover svg {
+    stroke: #568BA4;
+  }
+}
+
+.warning-box {
+  border: 2px solid #D06B57;
+  background: #f9e4d9;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 19px;
+  color: #3d2a24;
+}
+
+.choice-grid {
+  display: grid;
+  grid-gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-button {
+  width: 100%;
+  padding: 26px 20px;
+  border-radius: 8px;
+  border: 5px solid #D06B57;
+  background: bg-accent;
+  color: #3d3a36;
+  text-align: center;
+  box-shadow: 0 1px 2px 1px rgba(0, 0, 0, 0.14);
+  transition: all 0.2s linear;
+  cursor: pointer;
+
+  .choice-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #568BA4;
+    margin-bottom: 6px;
+  }
+
+  .choice-text {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  &:hover, &:focus-visible {
+    border-color: #568BA4;
+    outline: none;
+  }
+}
+
+.word-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  counter-reset: word;
+
+  .word {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    background: #fff;
+    border: 1px solid bg-accent;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px;
+    color: #1d1b20;
+
+    .n {
+      color: #8a8178;
+      font-size: 12px;
+      min-width: 18px;
+      text-align: right;
+    }
+  }
+}
+
+.address {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
