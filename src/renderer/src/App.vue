@@ -1,67 +1,50 @@
 <template>
-  <primary-nav />
-  <div class="page-wrapper">
-    <unavailable-page v-if="typeof unavailable === 'string'" />
-    <router-view v-if="setup && unlocked" v-slot="{ Component }">
-      <keep-alive>
-        <component :is="Component" />
-      </keep-alive>
-    </router-view>
-    <sync v-if="setup && unlocked" v-show="routeName === 'sync'" />
-    <setup-page v-else-if="!setup" />
-    <unlock-wallet v-else-if="!isAuthorized" />
-  </div>
-
-  <feedback v-if="modal === 'feedback'" @close="modal = ''" />
+  <template v-if="tiri.status === 'unlocked'">
+    <primary-nav />
+    <div class="page-wrapper">
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
+    </div>
+    <feedback v-if="modal === 'feedback'" @close="modal = ''" />
+  </template>
+  <onboarding v-else-if="tiri.status === 'no-wallet'" />
+  <unlock v-else-if="tiri.status === 'locked'" />
 
   <notification-queue />
 </template>
 
 <script setup lang="ts">
-  import {useUserStore, userStorage} from "~/store/user";
-  import {routerPush} from "./router";
-  import {useRoute} from "vue-router";
-  import {useWalletsStore} from "./store/wallet";
-  import Sync from './pages/Sync.vue'
-  import UnlockWallet from "./pages/UnlockWallet.vue";
-  import SetupPage from "./pages/SetupPage.vue";
-  import UnavailablePage from "./pages/UnavailablePage.vue";
-  import {storeToRefs} from "pinia";
-  import { computed, provide, ref } from "vue";
-  import PrimaryNav from "~/components/wallet/PrimaryNav.vue";
-  import Feedback from "~/components/Feedback.vue";
-  import NotificationQueue from "~/components/wallet/NotificationQueue.vue";
-  import mitt from 'mitt';
+  import { provide, ref, watch } from 'vue'
+  import mitt from 'mitt'
+  import { useTiriStore } from '~/store/tiri'
+  import { routerPush } from './router'
+  import Onboarding from './pages/Onboarding.vue'
+  import Unlock from './pages/Unlock.vue'
+  import PrimaryNav from '~/components/wallet/PrimaryNav.vue'
+  import Feedback from '~/components/Feedback.vue'
+  import NotificationQueue from '~/components/wallet/NotificationQueue.vue'
 
-  const userStore = useUserStore()
-  const { getWasLogout } = userStore;
-  const { user, isAuthorized } = storeToRefs(userStore)
-
+  const tiri = useTiriStore()
   const emitter = mitt()
-
   const modal = ref('')
 
-  provide('emitter', emitter);
-
-  const walletsStore = useWalletsStore()
-  const { setup, unavailable, wallets } = storeToRefs(walletsStore)
-  const { lockWallets, pushNotification, settings  } = walletsStore;
-  console.log('setup', setup)
-
-  //const autoLockTimeout = ref(null)
-
-  const unlocked = computed(() => {
-    const res = Array.isArray(wallets.value) && wallets.value.length !== 0;
-    console.log('unlocked', res)
-    return res;
-  })
+  provide('emitter', emitter)
 
   emitter.on('tdv-feedback-show', () => {
-    modal.value = 'feedback';
+    modal.value = 'feedback'
   })
 
-  const route = useRoute()
-  const routeName = computed(() => route.name)
+  // After unlocking or creating a wallet, start on the account screen.
+  watch(
+    () => tiri.status,
+    (now, before) => {
+      if (now === 'unlocked' && before !== 'unlocked') routerPush('home')
+      if (now !== 'unlocked') modal.value = ''
+    },
+  )
 </script>
 
 <style lang="stylus">

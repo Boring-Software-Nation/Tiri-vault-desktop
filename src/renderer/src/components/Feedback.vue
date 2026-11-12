@@ -24,55 +24,13 @@ export default {
 </script>
 
 <script lang="ts" setup>
-import { computed, onBeforeMount, ref, watchEffect } from "vue";
-import { storeToRefs } from "pinia";
-import { useWalletsStore } from "~/store/wallet";
-import { getLastWalletAddresses, getWalletAddresses } from '~/store/db';
+import { computed } from "vue";
+import { useTiriStore } from "~/store/tiri";
 
-const walletStore = useWalletsStore();
-const { currentWallet } = storeToRefs(walletStore);
-const addresses = ref([]);
+const tiri = useTiriStore();
 
-const subject = computed(() => {
-  return encodeURIComponent(`ticket from user ID ${currentWallet.value.id}`);
-});
-
-const message = computed(() => {
-  return encodeURIComponent(`My ID: ${currentWallet.value.id}\nMy wallet: ${currentAddress.value}.\nMy request: \n`);
-});
-
-const loadWalletAddresses = (page) => {
-  if (!currentWallet.value.id)
-    return;
-
-  const limit = 100;
-
-  return getLastWalletAddresses(currentWallet.value.id, limit, limit * page);
-}
-
-onBeforeMount(async () => {
-  const loadedAddresses = await loadWalletAddresses(0);
-
-  loadedAddresses.sort((a, b) => {
-    if (a.index > b.index)
-      return 1;
-
-    if (a.index < b.index)
-      return -1;
-
-    return 0;
-  });
-
-  addresses.value = loadedAddresses;
-});
-
-const currentAddress = computed(() => {
-  if (!Array.isArray(addresses.value) || addresses.value.length == 0 || !addresses.value[0])
-    return '';
-
-  return (addresses.value[0] as any).address;
-});
-
+const subject = computed(() => encodeURIComponent(`Ticket from wallet ${tiri.address}`));
+const message = computed(() => encodeURIComponent(`My wallet: ${tiri.address}\nMy request:\n`));
 </script>
 
 <style lang="stylus" scoped>

@@ -55,8 +55,6 @@ export const useWalletsStore = defineStore('walletsStore', () => {
     const step = ref('password');
     const uploadingFiles = ref(uploadingFileStorage.get())
 
-    updateMetadata();
-    setInterval(updateMetadata, 300000);
 
     const allWallets = computed(() => unref(wallets));
     const getSelectedWallet = computed(() =>  {

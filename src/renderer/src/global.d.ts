@@ -23,5 +23,9 @@ interface ImportMeta {
     VITE_TRIAL_PLAN_LIMIT: number,
     VITE_MEDIUM_PLAN_LIMIT: number,
     VITE_LARGE_PLAN_LIMIT: number,
+    /** calibration (testnet, default) or mainnet */
+    VITE_FILECOIN_NETWORK?: string,
+    /** Optional Filecoin JSON-RPC endpoint; defaults to the public Glif endpoint */
+    VITE_FILECOIN_RPC_URL?: string,
   }
 }

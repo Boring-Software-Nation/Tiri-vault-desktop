@@ -46,6 +46,24 @@ Related repos:
 
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin)
 
+> **Status:** Tiri Vault is moving from Sia to [Filecoin Onchain Cloud](https://docs.filecoin.cloud/). This version has the new wallet sign-up and sign-in; file sync returns in the next update.
+
+## Accounts and keys
+
+A Tiri account is a crypto wallet. On first start the app offers to **create a new wallet** (a 12-word recovery phrase, which the user writes down and confirms) or to **sign in with an existing recovery phrase** (12 or 24 words; the same phrase gives the same address as MetaMask).
+
+From the one recovery phrase the app derives:
+
+| Key | Used for |
+|---|---|
+| Wallet key (`m/44'/60'/0'/0/0`) | Paying for storage, signing in to the relay |
+| Master key (HKDF-SHA256) | Encrypting file keys and the file tree |
+| X25519 key pair | Receiving shared files |
+
+The phrase is stored only on this computer, encrypted with the user's unlock password (Argon2id + XChaCha20-Poly1305). The password is never stored or sent anywhere. Signing in to the relay means signing a one-time message with the wallet: no transaction, no fee.
+
+Code: `src/renderer/src/tiri/` (keys, vault, relay sign-in, balances) and `src/renderer/src/store/tiri.ts`.
+
 ## Project Setup
 
 ### Install
@@ -54,10 +72,25 @@ Related repos:
 $ npm install
 ```
 
+### Configure
+
+```bash
+$ cp .env.example .env
+```
+
+By default the app talks to a relay on `http://localhost:3003` (run [Tiri Relay](https://github.com/Boring-Software-Nation/Tiri-relay) locally) and to the Filecoin **Calibration testnet**. Free test tokens: [tFIL](https://faucet.calibnet.chainsafe-fil.io/funds.html), [tUSDFC](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc). A different relay or RPC address must also be added to the Content-Security-Policy in `src/renderer/index.html`.
+
 ### Development
 
 ```bash
 $ npm run dev
+```
+
+### Tests
+
+```bash
+$ npm test                                      # keys, encrypted storage, sign-in safety checks
+$ RELAY_URL=http://localhost:3003 npm test      # also signs in to a running relay
 ```
 
 ### Build
